@@ -1,0 +1,32 @@
+# Visual Studio and IDE state
+.vs/
+*.suo
+*.user
+*.vsidx
+*.VC.db
+*.VC.opendb
+*.db
+
+# Build outputs
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+bin/
+obj/
+out/
+
+# Compiled artifacts
+*.exe
+*.dll
+*.lib
+*.exp
+*.ilk
+*.idb
+*.ipch
+*.obj
+*.pdb
+*.recipe
+*.tlog
+*.lastbuildstate
+*.log

@@ -1,0 +1,9 @@
+#pragma once
+enum Greske
+{
+	NEMA_MESTA,
+	POGRESAN_INDEKS,
+	PRAZAN_NIZ,
+	PROBLEM_SA_FAJLOM
+
+};

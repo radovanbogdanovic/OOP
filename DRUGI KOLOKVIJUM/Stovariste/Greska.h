@@ -1,0 +1,11 @@
+#pragma once
+
+enum Greska {
+
+	UCITAJ_GRESKA,
+	SACUVAJ_GRESKA,
+	NIZ_PUN,
+	LOS_INDEKS,
+	LOSA_KOLICINA
+
+};
