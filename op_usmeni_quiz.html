@@ -1,0 +1,823 @@
+<!doctype html>
+<html lang="sr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OP Usmeni Quiz</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f7f4ee;
+      --ink: #1f2526;
+      --muted: #647174;
+      --line: #d8d1c4;
+      --surface: #ffffff;
+      --surface-2: #edf3f1;
+      --accent: #176b87;
+      --accent-2: #bb4d3e;
+      --ok: #1f7a53;
+      --warn: #a66500;
+      --shadow: 0 18px 45px rgba(31, 37, 38, .12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.62), rgba(255,255,255,.1)),
+        var(--paper);
+      color: var(--ink);
+      font: 16px/1.5 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    button,
+    input,
+    textarea {
+      font: inherit;
+    }
+
+    button {
+      border: 1px solid transparent;
+      background: var(--surface);
+      color: var(--ink);
+      cursor: pointer;
+      transition: transform .15s ease, border-color .15s ease, background .15s ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+    button:disabled {
+      cursor: not-allowed;
+      opacity: .6;
+      transform: none;
+    }
+
+    .app {
+      width: min(1180px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 22px 0 40px;
+    }
+
+    .topbar {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 16px;
+      align-items: center;
+      padding-bottom: 18px;
+    }
+
+    .title h1 {
+      margin: 0;
+      font-size: clamp(1.6rem, 3vw, 2.45rem);
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    .title p {
+      margin: 7px 0 0;
+      color: var(--muted);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(82px, 1fr));
+      gap: 8px;
+      min-width: min(460px, 100%);
+    }
+
+    .stat {
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, .78);
+      padding: 10px 12px;
+      min-height: 64px;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 1.25rem;
+      line-height: 1.1;
+    }
+
+    .stat span {
+      color: var(--muted);
+      font-size: .82rem;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) auto;
+      gap: 12px;
+      align-items: center;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      padding: 12px 0;
+      margin-bottom: 18px;
+    }
+
+    .search {
+      width: 100%;
+      min-height: 44px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, .86);
+      color: var(--ink);
+      padding: 0 13px;
+      outline: none;
+    }
+
+    .search:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(23, 107, 135, .14);
+    }
+
+    .tabs,
+    .actions,
+    .grade-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .tab,
+    .button {
+      min-height: 40px;
+      padding: 0 13px;
+      border-color: var(--line);
+      border-radius: 7px;
+      white-space: nowrap;
+    }
+
+    .tab.active,
+    .button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .button.danger {
+      background: #fff2ef;
+      border-color: #efc3bb;
+      color: #8b2d20;
+    }
+
+    .button.ok {
+      background: #eff8f3;
+      border-color: #bedfce;
+      color: #176340;
+    }
+
+    .main {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 300px;
+      gap: 20px;
+      align-items: start;
+    }
+
+    .panel,
+    .side {
+      background: rgba(255, 255, 255, .88);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+    }
+
+    .panel {
+      min-height: 560px;
+      padding: clamp(18px, 3vw, 32px);
+    }
+
+    .side {
+      padding: 16px;
+      position: sticky;
+      top: 14px;
+    }
+
+    .progress {
+      height: 10px;
+      background: #e6e0d5;
+      overflow: hidden;
+      margin-bottom: 18px;
+    }
+
+    .progress span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--ok));
+      transition: width .2s ease;
+    }
+
+    .meta {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--muted);
+      font-size: .95rem;
+      margin-bottom: 14px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      background: var(--surface-2);
+      color: #385155;
+      border-radius: 999px;
+      font-size: .84rem;
+      white-space: nowrap;
+    }
+
+    .question {
+      margin: 0;
+      font-size: clamp(1.45rem, 2.2vw, 2.25rem);
+      line-height: 1.18;
+      letter-spacing: 0;
+    }
+
+    .answer {
+      margin-top: 26px;
+      padding: 22px;
+      border-left: 5px solid var(--accent);
+      background: #f5faf8;
+      white-space: pre-wrap;
+      font-size: 1.05rem;
+    }
+
+    .answer.hidden {
+      display: none;
+    }
+
+    .choice-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 24px;
+    }
+
+    .choice {
+      width: 100%;
+      min-height: 64px;
+      border-color: var(--line);
+      border-radius: 8px;
+      padding: 13px 15px;
+      text-align: left;
+      line-height: 1.42;
+      white-space: normal;
+    }
+
+    .choice:hover {
+      border-color: var(--accent);
+      background: #f7fbfa;
+    }
+
+    .choice:disabled {
+      cursor: default;
+      opacity: 1;
+    }
+
+    .choice:disabled:hover {
+      transform: none;
+    }
+
+    .choice.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(23, 107, 135, .12);
+    }
+
+    .choice.correct {
+      border-color: #82c69f;
+      background: #eef8f2;
+    }
+
+    .choice.wrong {
+      border-color: #eba89f;
+      background: #fff1ee;
+    }
+
+    .choice-label {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      margin-right: 8px;
+      border-radius: 50%;
+      background: var(--surface-2);
+      color: var(--accent);
+      font-weight: 800;
+      vertical-align: top;
+    }
+
+    .feedback {
+      margin-top: 16px;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: #314044;
+    }
+
+    .feedback.correct {
+      border-color: #82c69f;
+      background: #eef8f2;
+      color: #176340;
+    }
+
+    .feedback.wrong {
+      border-color: #eba89f;
+      background: #fff1ee;
+      color: #8b2d20;
+    }
+
+    .typebox {
+      width: 100%;
+      min-height: 150px;
+      margin-top: 24px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      background: #fff;
+      resize: vertical;
+      outline: none;
+    }
+
+    .typebox:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(23, 107, 135, .14);
+    }
+
+    .card-actions {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 24px;
+    }
+
+    .side h2 {
+      margin: 0 0 12px;
+      font-size: 1rem;
+    }
+
+    .number-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    .num {
+      aspect-ratio: 1;
+      border-radius: 6px;
+      border-color: var(--line);
+      padding: 0;
+      min-width: 0;
+      font-size: .85rem;
+    }
+
+    .num.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+
+    .num.known {
+      border-color: #91c8ac;
+      background: #eef8f2;
+    }
+
+    .num.review {
+      border-color: #e0b471;
+      background: #fff6e8;
+    }
+
+    .num.active.known,
+    .num.active.review {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .note {
+      border-top: 1px solid var(--line);
+      padding-top: 12px;
+      color: var(--muted);
+      font-size: .92rem;
+    }
+
+    .browse {
+      display: grid;
+      gap: 10px;
+    }
+
+    details {
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, .88);
+      padding: 0;
+    }
+
+    summary {
+      cursor: pointer;
+      padding: 13px 15px;
+      font-weight: 700;
+    }
+
+    details div {
+      border-top: 1px solid var(--line);
+      padding: 14px 15px 16px;
+      white-space: pre-wrap;
+      color: #314044;
+    }
+
+    .empty {
+      color: var(--muted);
+      padding: 22px;
+      border: 1px dashed var(--line);
+      background: rgba(255, 255, 255, .6);
+    }
+
+    @media (max-width: 860px) {
+      .topbar,
+      .toolbar,
+      .main {
+        grid-template-columns: 1fr;
+      }
+
+      .stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        min-width: 0;
+      }
+
+      .side {
+        position: static;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .app {
+        width: min(100vw - 20px, 1180px);
+        padding-top: 12px;
+      }
+
+      .tabs,
+      .actions,
+      .grade-actions,
+      .card-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .button,
+      .tab {
+        width: 100%;
+      }
+
+      .number-grid {
+        grid-template-columns: repeat(6, 1fr);
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="topbar">
+      <div class="title">
+        <h1>OP Usmeni Quiz</h1>
+        <p>Dokument ima 99 ucitanih pitanja. Nedostaje broj: 40.</p>
+      </div>
+      <div class="stats" aria-label="Progress">
+        <div class="stat"><strong id="totalStat">99</strong><span>pitanja</span></div>
+        <div class="stat"><strong id="knownStat">0</strong><span>znam</span></div>
+        <div class="stat"><strong id="reviewStat">0</strong><span>ponovi</span></div>
+        <div class="stat"><strong id="leftStat">0</strong><span>ostalo</span></div>
+      </div>
+    </section>
+
+    <section class="toolbar">
+      <input id="search" class="search" type="search" placeholder="Pretraga ili broj pitanja" autocomplete="off">
+      <div class="tabs" role="tablist" aria-label="Rezim">
+        <button class="tab active" data-mode="study" type="button">Kartice</button>
+        <button class="tab" data-mode="test" type="button">Ponuđeni odgovori</button>
+        <button class="tab" data-mode="browse" type="button">Sva pitanja</button>
+      </div>
+    </section>
+
+    <section class="main">
+      <article class="panel" id="panel"></article>
+      <aside class="side">
+        <h2>Mapa pitanja</h2>
+        <div class="number-grid" id="numberGrid"></div>
+        <div class="actions">
+          <button class="button" id="shuffleBtn" type="button">Promesaj</button>
+          <button class="button" id="resetBtn" type="button">Reset</button>
+        </div>
+        <p class="note">Pitanje 40 ne postoji u dokumentu. 1 pitanje nema tekst odgovora.</p>
+      </aside>
+    </section>
+  </main>
+
+  <script>
+    const QUESTIONS = [{"number": 1, "question": "koji je podrazumevani nacin izvodjenja klase", "answer": "Kod ključne reči class podrazumevano nasleđivanje je private, dok je kod ključne reči struct podrazumevano public.", "choices": [{"text": "Izuzeci se mogu izazvati (koristeći throw) iz bilo koje funkcije, uključujući obične funkcije, metode klasa, konstruktore, pa čak i operatore. Ipak, izbegava se bacanje izuzetaka iz destruktora jer to može dovesti do nasilnog prekida programa (std::terminate) tokom \"unwinding-a\" steka.", "correct": false}, {"text": "Kod ključne reči class podrazumevano nasleđivanje je private, dok je kod ključne reči struct podrazumevano public.", "correct": true}, {"text": "Ovaj operator se obično definiše kao globalna funkcija, ali ako se posmatra kao članica klase istream, prototip izgleda ovako: istream& operator>>(Tip& obj);. Ili ovako - friend istream& operator>> (istream& i, MyClass& mc);", "correct": false}, {"text": "Poziv mora biti takav da kompajler može nedvosmisleno dedukovati (zaključiti) tipove parametara šablona iz argumenata poziva, ili tipovi moraju biti eksplicitno navedeni.", "correct": false}]}, {"number": 2, "question": "koja vrsta asocijativnosti vazi za operator >>", "answer": "Operator >>  ima levu asocijativnost. To znači da se u izrazima sa više istih operatora operacije izvršavaju s leva na desno, što omogućava ulančavanje poput cin >> a >> b;.\nLeft to right", "choices": [{"text": "Kod protected nasleđivanja: public članovi osnovne klase postaju protected u izvedenoj. protected članovi osnovne klase ostaju protected u izvedenoj. private članovi ostaju nedostupni. To znači da korisnici izvedene klase ne mogu videti te članove, ali klase koje se dalje izvode iz nje mogu.", "correct": false}, {"text": "Imena se kreiraju korišćenjem ključne reči operator nakon koje sledi sam simbol operatora koji se preklapa (npr. operator+, operator==, operator[]).", "correct": false}, {"text": "Služi za pomeranje ulaznog pokazivača (eng. get pointer) unutar ulaznog toka podataka (fajla) na određenu poziciju.", "correct": false}, {"text": "Operator >> ima levu asocijativnost. To znači da se u izrazima sa više istih operatora operacije izvršavaju s leva na desno, što omogućava ulančavanje poput cin >> a >> b;. Left to right", "correct": true}]}, {"number": 3, "question": "nabrojati i objasniti vrste specijalizacije sablona", "answer": "Postoje potpuna i delimicna\ndelimicna - ako specijalizovani sablon ima bar jedan genericki parametar tada moze da se generise vise klasa iz specijalizovanog sablona\npotpuna - ako specijalizovani sablon nema ni jedan genericki parametar tada na osnovu sablona moze da se generise samo jedna verzija klasa", "choices": [{"text": "Odgovor: Destruktor se neće izvršiti ako se program nasilno prekine (npr. pozivom exit() ili abort()), ako objekat nije pravilno kreiran (izuzetak u konstruktoru), ili ako je objekat dinamički alociran (new), a nije eksplicitno obrisan (delete). ako imamo instancu objekta izvedene klase koji je dodeljen tipu osnovne...", "correct": false}, {"text": "Konstruktori se pozivaju kad se objekti definisu tj. svaki put kad u toku izvrsenja dobiju scope, destruktori se pozivaju kad objekti prestanu da vaze tj. gube scope, a to je kada se zavrsava blok u kome je objekat definisan. Destruktor se ne poziva ako se program zavrsi sa exit ili abort.", "correct": false}, {"text": "Postoje potpuna i delimicna delimicna - ako specijalizovani sablon ima bar jedan genericki parametar tada moze da se generise vise klasa iz specijalizovanog sablona potpuna - ako specijalizovani sablon nema ni jedan genericki parametar tada na osnovu sablona moze da se generise samo jedna verzija klasa", "correct": true}, {"text": "Odgovor: Može sadržati proizvoljan broj blanko znakova pre samog podatka, jer ih operator >> po podrazumevanom podešavanju preskače (ignoriše) dok ne naiđe na prvi ne-prazan karakter.", "correct": false}]}, {"number": 4, "question": "Sta je apstraktna klasa?", "answer": "Apstraktna klasa je klasa koja sadrzi barem jednu cistu virtuelnu funkciju. Ne moze imati instance vec se iz nje samo mogu izvoditi druge klase. Mogu se napraviti pokazivaci i reference na apstraktnu klasu. Oni mogu samo da ukazuju na objekte izvedenih klasa.", "choices": [{"text": "Odgovor: Potrebno je uključiti zaglavlje <algorithm> (gde se nalazi funkcija find) i zaglavlje <list> (za samu kontejnersku klasu).", "correct": false}, {"text": "Apstraktna klasa je klasa koja sadrzi barem jednu cistu virtuelnu funkciju. Ne moze imati instance vec se iz nje samo mogu izvoditi druge klase. Mogu se napraviti pokazivaci i reference na apstraktnu klasu. Oni mogu samo da ukazuju na objekte izvedenih klasa.", "correct": true}, {"text": "Dinamičko povezivanje (eng. late binding) je mehanizam kojim se odluka o tome koja će se funkcija pozvati donosi u vreme izvršavanja (runtime), a ne u vreme kompilacije. Ovo se u C++ ostvaruje putem virtuelnih funkcija i pokazivača/referenci na osnovnu klasu. Dinamičko povezivanje (late binding) je mehanizam kod koga...", "correct": false}, {"text": "Za korisničke tipove (klase/strukture) C++ automatski definiše: Operator dodele (operator=). Adresni operator (operator&). Operator pristupa članu (operator.). Operator za zarez (operator,).", "correct": false}]}, {"number": 5, "question": "Kog tipa će biti izuzetak koji je kreiran samo pozivom throw; (bez izraza iza throw)?", "answer": "Imace isti tip kao prethodno uhvaćeni izuzetak (rethrow), a ne novi tip. (validan je samo unutar catch bloka) Međutim, ukoliko se throw; pozove van catch bloka (kada ne postoji aktivan izuzetak), on ne može odrediti tip, što dovodi do pozivanja funkcije std::terminate() i momentalnog prekida programa.", "choices": [{"text": "Odgovor: Objektu osnovne klase se mogu dodeliti objekti izvedenih klasa (tzv. \"upcasting\"). Međutim, važno je napomenuti da će u tom slučaju doći do pojave poznate kao \"slicing\" (odsecanje), gde će se kopirati samo onaj deo izvedenog objekta koji pripada osnovnoj klasi.", "correct": false}, {"text": "To je namespace bez imena. On ima globalni scoope ali sa unutrasnjim povezivanjem, sto znaci da su identifikatori dostupni samo unutar te dadoteke u kojoj je definisan anonimni namespace.", "correct": false}, {"text": "Imace isti tip kao prethodno uhvaćeni izuzetak (rethrow), a ne novi tip. (validan je samo unutar catch bloka) Međutim, ukoliko se throw; pozove van catch bloka (kada ne postoji aktivan izuzetak), on ne može odrediti tip, što dovodi do pozivanja funkcije std::terminate() i momentalnog prekida programa.", "correct": true}, {"text": "Moguća je samo potpuna (eksplicitna) specijalizacija. Delimična specijalizacija je rezervisana isključivo za klase.", "correct": false}]}, {"number": 6, "question": "Kako se može definisati operatorska funkcija ++ --?", "answer": "kao prefiksa i postfiksna funckija\nKao postfiksna vraca objekat, pravi kopiju objekta i vraca staru vrednost, ima parametar int koji sluzi kao pomoc kompajleru\nT operator++(int);\nKao prefiksna vraca referencu na objekat, menja objekat i vraca novu izmenjenu vrednost\nT& operator++();", "choices": [{"text": "Odgovor: Izraz predstavlja adresu petog elementa niza A (indeks A[4]). Budući da se na početnu adresu dodaje veličina četiri elementa, pokazivač se pomera na početak petog elementa u memoriji.", "correct": false}, {"text": "To je namespace bez imena. On ima globalni scoope ali sa unutrasnjim povezivanjem, sto znaci da su identifikatori dostupni samo unutar te dadoteke u kojoj je definisan anonimni namespace.", "correct": false}, {"text": "Maksimalan broj standardnih tokova je fiksiran na 8 prema samoj specifikaciji C++ standarda. Taj broj zavisi od postojanja četiri namenska toka (in, out, err, log) koji su duplirani kako bi podržali dva tipa karaktera (obične char i široke wchar_t).", "correct": false}, {"text": "kao prefiksa i postfiksna funckija Kao postfiksna vraca objekat, pravi kopiju objekta i vraca staru vrednost, ima parametar int koji sluzi kao pomoc kompajleru T operator++(int); Kao prefiksna vraca referencu na objekat, menja objekat i vraca novu izmenjenu vrednost T& operator++();", "correct": true}]}, {"number": 7, "question": "Objasniti anonimni prostor imena (namespace).", "answer": "To je namespace bez imena. On ima globalni scoope ali sa unutrasnjim povezivanjem, sto znaci da su identifikatori dostupni samo unutar te dadoteke u kojoj je definisan anonimni namespace.", "choices": [{"text": "To je namespace bez imena. On ima globalni scoope ali sa unutrasnjim povezivanjem, sto znaci da su identifikatori dostupni samo unutar te dadoteke u kojoj je definisan anonimni namespace.", "correct": true}, {"text": "Apstraktna klasa je klasa koja sadrzi barem jednu cistu virtuelnu funkciju. Ne moze imati instance vec se iz nje samo mogu izvoditi druge klase. Mogu se napraviti pokazivaci i reference na apstraktnu klasu. Oni mogu samo da ukazuju na objekte izvedenih klasa.", "correct": false}, {"text": "Odgovor: Konstruktori se pozivaju tacno jedanput kada se dodje do mesta gde je objekat definisan. Destruktor se poziva tek na kraju rada celog programa.", "correct": false}, {"text": "Da, izuzeci se mogu koristiti u konstruktoru. Ako se desi izuzetak, objekat se smatra nedovršenim i proces njegovog kreiranja se prekida, zbog čega se neće pozvati destruktor za taj objekat.", "correct": false}]}, {"number": 8, "question": "Šta su iteratori?", "answer": "Iteratori su klase ciji objekti predstavljaju pozicije elemenata u razlicitim kontejnerskim klasama. Iteratori se uvek pridruzuju nekoj kontejnerskoj klasi.", "choices": [{"text": "Apstraktna klasa je klasa koja sadrzi barem jednu cistu virtuelnu funkciju. Ne moze imati instance vec se iz nje samo mogu izvoditi druge klase. Mogu se napraviti pokazivaci i reference na apstraktnu klasu. Oni mogu samo da ukazuju na objekte izvedenih klasa.", "correct": false}, {"text": "Iteratori su klase ciji objekti predstavljaju pozicije elemenata u razlicitim kontejnerskim klasama. Iteratori se uvek pridruzuju nekoj kontejnerskoj klasi.", "correct": true}, {"text": "Odgovor: Konstruktori globalnih objekata se pozivaju pre ulaska u main() funkciju, a njihovi destruktori se pozivaju nakon završetka main() funkcije, u obrnutom redosledu od redosleda kreiranja.", "correct": false}, {"text": "Kod protected nasleđivanja: public članovi osnovne klase postaju protected u izvedenoj. protected članovi osnovne klase ostaju protected u izvedenoj. private članovi ostaju nedostupni. To znači da korisnici izvedene klase ne mogu videti te članove, ali klase koje se dalje izvode iz nje mogu.", "correct": false}]}, {"number": 9, "question": "Navesti operatore za pristup clanovima klase.", "answer": "Clanovima klase se pristupa pomocu 2 operatora : Operator . za objekte i reference objekta, operator -> za pokazivace.", "choices": [{"text": "Clanovima klase se pristupa pomocu 2 operatora : Operator . za objekte i reference objekta, operator -> za pokazivace.", "correct": true}, {"text": "Prvo se pozivaju konstruktori osnovnih klasa (po redosledu navođenja u listi nasleđivanja). Zatim se pozivaju konstruktori članova objekata (atributa) klase. Na kraju se izvršava telo konstruktora same izvedene klase.", "correct": false}, {"text": "Odgovor: Prvo se poziva konstruktor klase A, zatim klase B (redosledom navođenja u listi nasleđivanja), pa tek onda konstruktor same klase C.", "correct": false}, {"text": "Hendler catch (A &a) može prihvatiti izuzetak tipa B ako je:  je tip B isti kao A, ili  je A javna osnovna klasa (public base class) klase B (polimorfizam — hvatanje po osnovnoj klasi), ili  je tip A = void*, a izuzetak je bilo koji pokazivački tip.", "correct": false}]}, {"number": 10, "question": "Kako se funkcije koriste kao parametri šablona?", "answer": "Funkcije se kao parametri sablona prenose preko pokazivaca na funkcije.", "choices": [{"text": "Koristi se kod virtuelnih funkcija kada se saopstava da je to konacna verzija te funckije i da se ona ne moze redefinisati dalje i kod klasa sa se zabrani dalje nasledjivanje.", "correct": false}, {"text": "Funkcije se kao parametri sablona prenose preko pokazivaca na funkcije.", "correct": true}, {"text": "Odgovor: U jednom fajlu može biti definisan samo jedan neimenovani (anonimni) namespace. Svi delovi koda koji se nalaze u anonimnim prostorima imena unutar istog fajla tretiraju se kao da pripadaju tom jednom jedinstvenom prostoru", "correct": false}, {"text": "Odgovor: Namena klase ostrstream je izlazni tok podataka ka nizu karaktera u memoriji (C-string).", "correct": false}]}, {"number": 11, "question": "Ako je nums objekat kontejnerske klase lista a nums_iter odgovarajući iterator šta radi sledeća linija koda? nums_iter = find((nums.begin())++, (nums.end())--, 10);", "answer": "Porlazi kroz sortiran niz od drugog elementa od pocetka sve do pretposlednjeg elemnta i proverava da li su 10 (racunaju se i 2. pretposlednji element)\nNapisani kod je neispravan (zbog (nums.begin())++), ali kada bi bio ispravan radio bi ovo gore.", "choices": [{"text": "Porlazi kroz sortiran niz od drugog elementa od pocetka sve do pretposlednjeg elemnta i proverava da li su 10 (racunaju se i 2. pretposlednji element) Napisani kod je neispravan (zbog (nums.begin())++), ali kada bi bio ispravan radio bi ovo gore.", "correct": true}, {"text": "Nije simetrična (obostrana): Ako je A prijatelj klasi B, ne znači da je B prijatelj klasi A. Nije tranzitivna: Ako je A prijatelj od B, a B prijatelj od C, A nije automatski prijatelj klasi C. Nije nasledna: Prijatelj osnovne klase ne postaje automatski prijatelj njenih izvedenih klasa.", "correct": false}, {"text": "Odgovor: Na dva osnovna načina: 1. Korišćenjem konstruktora klase ifstream (npr. ifstream fajl(\"test.txt\");); 2. Korišćenjem podrazumevanog konstruktora i naknadnim pozivom metode open() (npr. fajl.open(\"test.txt\");).", "correct": false}, {"text": "Sprecava se implicitna konverzija, sprecava se nezeljeno automatsko kreiranje objekata i omogucava se veca sigurnost koda A obj = 5; ne moze A obj(5); moze", "correct": false}]}, {"number": 12, "question": "Da li se mogu koristiti izuzeci u konstruktoru?", "answer": "Da, izuzeci se mogu koristiti u konstruktoru. Ako se desi izuzetak, objekat se smatra nedovršenim i proces njegovog kreiranja se prekida, zbog čega se neće pozvati destruktor za taj objekat.", "choices": [{"text": "Operator >> ima levu asocijativnost. To znači da se u izrazima sa više istih operatora operacije izvršavaju s leva na desno, što omogućava ulančavanje poput cin >> a >> b;. Left to right", "correct": false}, {"text": "Da, izuzeci se mogu koristiti u konstruktoru. Ako se desi izuzetak, objekat se smatra nedovršenim i proces njegovog kreiranja se prekida, zbog čega se neće pozvati destruktor za taj objekat.", "correct": true}, {"text": "Odgovor: Prvo se poziva konstruktor klase A, zatim klase B (redosledom navođenja u listi nasleđivanja), pa tek onda konstruktor same klase C.", "correct": false}, {"text": "Dinamičko povezivanje (eng. late binding) je mehanizam kojim se odluka o tome koja će se funkcija pozvati donosi u vreme izvršavanja (runtime), a ne u vreme kompilacije. Ovo se u C++ ostvaruje putem virtuelnih funkcija i pokazivača/referenci na osnovnu klasu. Dinamičko povezivanje (late binding) je mehanizam kod koga...", "correct": false}]}, {"number": 13, "question": "Da li operator dodele može da bude virtuelni?", "answer": "Da, operator dodele (operator=) može biti deklarisan kao virtuelan, ali se to u praksi smatra lošom programerskom praksom i retko se koristi.\nDa, operator= može biti virtuelan, ali se to u praksi izbegava. Glavni razlog je taj što virtuelne funkcije zahtevaju da i u osnovnoj i u izvedenoj klasi imaju iste tipove parametara, dok operator= po pravilu očekuje referencu na sopstvenu klasu", "choices": [{"text": "Clanovima klase se pristupa pomocu 2 operatora : Operator . za objekte i reference objekta, operator -> za pokazivace.", "correct": false}, {"text": "Odgovor: Za operator >>= (operator dodele sa pomeranjem udesno) važi desna asocijativnost. To znači da se u izrazima gde se ovaj operator pojavljuje više puta, operacije izvršavaju s desna na levo. Na primer, izraz a >>= b >>= c se interpretira kao da su dodate zagrade na sledeći način: a >>= (b >>= c). s desna na levo", "correct": false}, {"text": "Da, operator dodele (operator=) može biti deklarisan kao virtuelan, ali se to u praksi smatra lošom programerskom praksom i retko se koristi. Da, operator= može biti virtuelan, ali se to u praksi izbegava. Glavni razlog je taj što virtuelne funkcije zahtevaju da i u osnovnoj i u izvedenoj klasi imaju iste tipove...", "correct": true}, {"text": "Maksimalan broj standardnih tokova je fiksiran na 8 prema samoj specifikaciji C++ standarda. Taj broj zavisi od postojanja četiri namenska toka (in, out, err, log) koji su duplirani kako bi podržali dva tipa karaktera (obične char i široke wchar_t).", "correct": false}]}, {"number": 14, "question": "Kako se koristi final?", "answer": "Koristi se kod virtuelnih funkcija kada se saopstava da je to konacna verzija te funckije i da se ona ne moze redefinisati dalje i kod klasa sa se zabrani dalje nasledjivanje.", "choices": [{"text": "Odgovor: Poziva se u tri situacije: 1. Prilikom inicijalizacije novog objekta već postojećim objektom iste klase; 2. Prilikom prenošenja objekta u funkciju po vrednosti (kao argument); 3. Prilikom vraćanja objekta iz funkcije po vrednosti.", "correct": false}, {"text": "Iz funkcija ispred kojih stoji modifikator noexcept (ovo se nadam da je tacno, nema mi smisla da ista drugo bude) i iz destruktora (jer to dovodi do terminacije programa ako je već u toku obrada drugog izuzetka)..", "correct": false}, {"text": "Hendler catch (A &a) može prihvatiti izuzetak tipa B ako je:  je tip B isti kao A, ili  je A javna osnovna klasa (public base class) klase B (polimorfizam — hvatanje po osnovnoj klasi), ili  je tip A = void*, a izuzetak je bilo koji pokazivački tip.", "correct": false}, {"text": "Koristi se kod virtuelnih funkcija kada se saopstava da je to konacna verzija te funckije i da se ona ne moze redefinisati dalje i kod klasa sa se zabrani dalje nasledjivanje.", "correct": true}]}, {"number": 15, "question": "Da li je moguće definisati virtuelnu funkciju kao statičku funkciju članicu?", "answer": "nije moguce, zato sto static funckija nema this", "choices": [{"text": "Vrši se tzv. plitko kopiranje (shallow copy), gde se svaki podatak-član kopira bajt-po-bajt iz izvornog objekta u novi.", "correct": false}, {"text": "nije moguce, zato sto static funckija nema this", "correct": true}, {"text": "Operator \"spaceship\" (<=>), uveden u C++20 standardu, ima ne-asocijativno ponašanje (eng. non-associative). To znači da izrazi poput a <=> b <=> c nisu dozvoljeni i izazvaće grešku pri kompilaciji.", "correct": false}, {"text": "Kod protected nasleđivanja: public članovi osnovne klase postaju protected u izvedenoj. protected članovi osnovne klase ostaju protected u izvedenoj. private članovi ostaju nedostupni. To znači da korisnici izvedene klase ne mogu videti te članove, ali klase koje se dalje izvode iz nje mogu.", "correct": false}]}, {"number": 16, "question": "Napisati deklaraciju move konstruktora (pomerajući konstruktor) klase Student.", "answer": "Student(Student&& s) noexcept;", "choices": [{"text": "Dinamičko povezivanje (eng. late binding) je mehanizam kojim se odluka o tome koja će se funkcija pozvati donosi u vreme izvršavanja (runtime), a ne u vreme kompilacije. Ovo se u C++ ostvaruje putem virtuelnih funkcija i pokazivača/referenci na osnovnu klasu. Dinamičko povezivanje (late binding) je mehanizam kod koga...", "correct": false}, {"text": "Kod ključne reči class podrazumevano nasleđivanje je private, dok je kod ključne reči struct podrazumevano public.", "correct": false}, {"text": "Student(Student&& s) noexcept;", "correct": true}, {"text": "Mora se realizovati kao globalna funkcija (često kao friend klase Zakon ili Osoba) jer je levi operanad tipa int, a ne objekat klase.", "correct": false}]}, {"number": 17, "question": "Redosled poziva konstruktora i destruktora automatskih lokalnih objekata.", "answer": "Konstruktori se pozivaju kad se objekti definisu tj. svaki put kad u toku izvrsenja dobiju scope, destruktori se pozivaju kad objekti prestanu da vaze tj. gube scope, a to je kada se zavrsava blok u kome je objekat definisan. Destruktor se ne poziva ako se program zavrsi sa exit ili abort.", "choices": [{"text": "Odgovor: Konstruktori nemaju tip povratne vrednosti, čak ni void. Njihova jedina svrha je inicijalizacija objekta.", "correct": false}, {"text": "Da, izuzeci se mogu koristiti u konstruktoru. Ako se desi izuzetak, objekat se smatra nedovršenim i proces njegovog kreiranja se prekida, zbog čega se neće pozvati destruktor za taj objekat.", "correct": false}, {"text": "Mora se realizovati kao globalna funkcija (često kao friend klase Zakon ili Osoba) jer je levi operanad tipa int, a ne objekat klase.", "correct": false}, {"text": "Konstruktori se pozivaju kad se objekti definisu tj. svaki put kad u toku izvrsenja dobiju scope, destruktori se pozivaju kad objekti prestanu da vaze tj. gube scope, a to je kada se zavrsava blok u kome je objekat definisan. Destruktor se ne poziva ako se program zavrsi sa exit ili abort.", "correct": true}]}, {"number": 18, "question": "Koja vrsta asocijativnosti važi za operator >>=?", "answer": "Odgovor: Za operator >>= (operator dodele sa pomeranjem udesno) važi desna asocijativnost. To znači da se u izrazima gde se ovaj operator pojavljuje više puta, operacije izvršavaju s desna na levo. Na primer, izraz a >>= b >>= c se interpretira kao da su dodate zagrade na sledeći način: a >>= (b >>= c).\ns desna na levo", "choices": [{"text": "Da, izuzeci se mogu koristiti u konstruktoru. Ako se desi izuzetak, objekat se smatra nedovršenim i proces njegovog kreiranja se prekida, zbog čega se neće pozvati destruktor za taj objekat.", "correct": false}, {"text": "Clanovima klase se pristupa pomocu 2 operatora : Operator . za objekte i reference objekta, operator -> za pokazivace.", "correct": false}, {"text": "Odgovor: Za operator >>= (operator dodele sa pomeranjem udesno) važi desna asocijativnost. To znači da se u izrazima gde se ovaj operator pojavljuje više puta, operacije izvršavaju s desna na levo. Na primer, izraz a >>= b >>= c se interpretira kao da su dodate zagrade na sledeći način: a >>= (b >>= c). s desna na levo", "correct": true}, {"text": "Dinamičko povezivanje (eng. late binding) je mehanizam kojim se odluka o tome koja će se funkcija pozvati donosi u vreme izvršavanja (runtime), a ne u vreme kompilacije. Ovo se u C++ ostvaruje putem virtuelnih funkcija i pokazivača/referenci na osnovnu klasu. Dinamičko povezivanje (late binding) je mehanizam kod koga...", "correct": false}]}, {"number": 19, "question": "Karakteristike privatnog nasledjivanja.", "answer": "class A : private B {...}\nsvi public i protected atributi i metode iz B su sada u A private, a private delovi klase B jesu nasledjeni, ali im se ne moze direktno pristupiti\nKlasa A se ne moze koristiti polimorfno kao B", "choices": [{"text": "Mora se definisati kao globalna funkcija (često se deklariše kao friend unutar klase). Ne može biti metoda klase jer prvi parametar kod metoda mora biti objekat te klase.", "correct": false}, {"text": "Odgovor: Za operatore kao što su +=, -=, *=, /= važi desna asocijativnost (izračunavaju se zdesna nalevo).", "correct": false}, {"text": "Odgovor: Namena klase ostrstream je izlazni tok podataka ka nizu karaktera u memoriji (C-string).", "correct": false}, {"text": "class A : private B {...} svi public i protected atributi i metode iz B su sada u A private, a private delovi klase B jesu nasledjeni, ali im se ne moze direktno pristupiti Klasa A se ne moze koristiti polimorfno kao B", "correct": true}]}, {"number": 20, "question": "Koje je dejstvo noexcept operatora?", "answer": "Operator noexcept(izraz) proverava u fazi prevođenja da li izraz može da generiše izuzetak. Izraz se ne izvršava, a rezultat je logička vrednost (true ako izraz ne baca izuzetak).", "choices": [{"text": "Operator noexcept(izraz) proverava u fazi prevođenja da li izraz može da generiše izuzetak. Izraz se ne izvršava, a rezultat je logička vrednost (true ako izraz ne baca izuzetak).", "correct": true}, {"text": "Odgovor: Na dva osnovna načina: 1. Korišćenjem konstruktora klase ifstream (npr. ifstream fajl(\"test.txt\");); 2. Korišćenjem podrazumevanog konstruktora i naknadnim pozivom metode open() (npr. fajl.open(\"test.txt\");).", "correct": false}, {"text": "Odgovor: Ušteda će biti nula (0). Razlog je taj što kompajler ignoriše zahtev za inline kod rekurzivnih funkcija, jer ne može da izvrši beskonačno (ili neizvesno) razmotavanje koda u fazi kompilacije.", "correct": false}, {"text": "Za korisničke tipove (klase/strukture) C++ automatski definiše: Operator dodele (operator=). Adresni operator (operator&). Operator pristupa članu (operator.). Operator za zarez (operator,).", "correct": false}]}, {"number": 21, "question": "Kog je tipa povratna vrednost postdekrement operatora?", "answer": "Postdekrement treba da sacuva kopiju svog operanda, izmeni operand i zatim vrati kopiju. (treba da vrati const!! nzm jel ce da skine poene ako mu se to ne napise).\nPostdekrement operator vraća kopiju objekta pre umanjenja. Povratna vrednost je objekat vraćen po vrednosti (const T).", "choices": [{"text": "Odgovor: Nikako. Prijateljske funkcije nisu članice klase i stoga nemaju pokazivač this. One pristupaju privatnim članovima objekta direktno preko imena tog objekta koji im je prosleđen kao običan argument.", "correct": false}, {"text": "Imace isti tip kao prethodno uhvaćeni izuzetak (rethrow), a ne novi tip. (validan je samo unutar catch bloka) Međutim, ukoliko se throw; pozove van catch bloka (kada ne postoji aktivan izuzetak), on ne može odrediti tip, što dovodi do pozivanja funkcije std::terminate() i momentalnog prekida programa.", "correct": false}, {"text": "Postdekrement treba da sacuva kopiju svog operanda, izmeni operand i zatim vrati kopiju. (treba da vrati const!! nzm jel ce da skine poene ako mu se to ne napise). Postdekrement operator vraća kopiju objekta pre umanjenja. Povratna vrednost je objekat vraćen po vrednosti (const T).", "correct": true}, {"text": "Kod ključne reči class podrazumevano nasleđivanje je private, dok je kod ključne reči struct podrazumevano public.", "correct": false}]}, {"number": 22, "question": "Šta mogu da budu parametri šablonske klase?", "answer": "Tipski parametri(tipovi)(typename ili class), netipski parametri(vrednosti)(npr int) i sabloni", "choices": [{"text": "Apstraktna klasa je klasa koja sadrzi barem jednu cistu virtuelnu funkciju. Ne moze imati instance vec se iz nje samo mogu izvoditi druge klase. Mogu se napraviti pokazivaci i reference na apstraktnu klasu. Oni mogu samo da ukazuju na objekte izvedenih klasa.", "correct": false}, {"text": "Sprecava se implicitna konverzija, sprecava se nezeljeno automatsko kreiranje objekata i omogucava se veca sigurnost koda A obj = 5; ne moze A obj(5); moze", "correct": false}, {"text": "Izuzeci se mogu izazvati (koristeći throw) iz bilo koje funkcije, uključujući obične funkcije, metode klasa, konstruktore, pa čak i operatore. Ipak, izbegava se bacanje izuzetaka iz destruktora jer to može dovesti do nasilnog prekida programa (std::terminate) tokom \"unwinding-a\" steka.", "correct": false}, {"text": "Tipski parametri(tipovi)(typename ili class), netipski parametri(vrednosti)(npr int) i sabloni", "correct": true}]}, {"number": 23, "question": "Sta ne nasledjuje izvedena klasa?", "answer": "difoltni konstruktor, destruktor, kopi konstruktor, operator=, friend metode i klase osnovne klase", "choices": [{"text": "Odgovor: U jednom fajlu može biti definisan samo jedan neimenovani (anonimni) namespace. Svi delovi koda koji se nalaze u anonimnim prostorima imena unutar istog fajla tretiraju se kao da pripadaju tom jednom jedinstvenom prostoru", "correct": false}, {"text": "Operator noexcept(izraz) proverava u fazi prevođenja da li izraz može da generiše izuzetak. Izraz se ne izvršava, a rezultat je logička vrednost (true ako izraz ne baca izuzetak).", "correct": false}, {"text": "difoltni konstruktor, destruktor, kopi konstruktor, operator=, friend metode i klase osnovne klase", "correct": true}, {"text": "Operator \"spaceship\" (<=>), uveden u C++20 standardu, ima ne-asocijativno ponašanje (eng. non-associative). To znači da izrazi poput a <=> b <=> c nisu dozvoljeni i izazvaće grešku pri kompilaciji.", "correct": false}]}, {"number": 24, "question": "Koje su osobine relacije prijateljstva?", "answer": "Nije simetrična (obostrana): Ako je A prijatelj klasi B, ne znači da je B prijatelj klasi A.\nNije tranzitivna: Ako je A prijatelj od B, a B prijatelj od C, A nije automatski prijatelj klasi C.\nNije nasledna: Prijatelj osnovne klase ne postaje automatski prijatelj njenih izvedenih klasa.", "choices": [{"text": "Odgovor: Kolekcija se mora realizovati kao niz (ili kontejner) pokazivača ili referenci na osnovnu klasu. Na taj način, svaki element kolekcije može pokazivati na objekte različitih izvedenih klasa, a poziv virtuelnih funkcija će se vršiti polimorfno u vreme izvršavanja.", "correct": false}, {"text": "Izuzeci se mogu izazvati (koristeći throw) iz bilo koje funkcije, uključujući obične funkcije, metode klasa, konstruktore, pa čak i operatore. Ipak, izbegava se bacanje izuzetaka iz destruktora jer to može dovesti do nasilnog prekida programa (std::terminate) tokom \"unwinding-a\" steka.", "correct": false}, {"text": "Odgovor: Na nula načina. U C++ jeziku konstruktori ne mogu biti virtuelni. (Napomena: Ponekad se pod ovim terminom misli na \"virtual copy constructor\" koji se simulira metodom clone(), ali standardni virtuelni konstruktor ne postoji).", "correct": false}, {"text": "Nije simetrična (obostrana): Ako je A prijatelj klasi B, ne znači da je B prijatelj klasi A. Nije tranzitivna: Ako je A prijatelj od B, a B prijatelj od C, A nije automatski prijatelj klasi C. Nije nasledna: Prijatelj osnovne klase ne postaje automatski prijatelj njenih izvedenih klasa.", "correct": true}]}, {"number": 25, "question": "Koji header file je potrebno uključiti da bi mogli da koristimo funkciju find nad nekim objektom kontejnerske klase vector?.", "answer": "postrebno je <algorithm> i <vector>", "choices": [{"text": "Odgovor: Na nula načina. U C++ jeziku konstruktori ne mogu biti virtuelni. (Napomena: Ponekad se pod ovim terminom misli na \"virtual copy constructor\" koji se simulira metodom clone(), ali standardni virtuelni konstruktor ne postoji).", "correct": false}, {"text": "Odgovor: Virtuelno izvođenje se koristi kod višestrukog nasleđivanja kako bi se sprečilo dupliranje članova zajedničke indirektne osnovne klase (tzv. \"dijamantski problem\"). Deklaracijom virtual prilikom nasleđivanja, izvedena klasa dobija samo jedan podobjekat te osnovne klase.", "correct": false}, {"text": "Ako funkcija deklarisana sa noexcept pokuša da izbaci izuzetak koji se ne obradi unutar nje, program odmah poziva funkciju std::terminate() koja nasilno prekida izvršavanje programa.", "correct": false}, {"text": "postrebno je <algorithm> i <vector>", "correct": true}]}, {"number": 26, "question": "Klasa A je izvedena iz klase B a klasa B iz klase C. Kojim redosledom treba poređati catch klauzule čiji su tipovi redom A, B i C?", "answer": "Redosled mora biti od najizvedenije ka osnovnoj klasi: A, pa B, pa C. (Ako bi stavio C prvu, ona bi \"uhvatila\" i A i B jer je ona njihova osnovna klasa).", "choices": [{"text": "Služi za pomeranje ulaznog pokazivača (eng. get pointer) unutar ulaznog toka podataka (fajla) na određenu poziciju.", "correct": false}, {"text": "Redosled mora biti od najizvedenije ka osnovnoj klasi: A, pa B, pa C. (Ako bi stavio C prvu, ona bi \"uhvatila\" i A i B jer je ona njihova osnovna klasa).", "correct": true}, {"text": "Odgovor: Objektu osnovne klase se mogu dodeliti objekti izvedenih klasa (tzv. \"upcasting\"). Međutim, važno je napomenuti da će u tom slučaju doći do pojave poznate kao \"slicing\" (odsecanje), gde će se kopirati samo onaj deo izvedenog objekta koji pripada osnovnoj klasi.", "correct": false}, {"text": "postrebno je <algorithm> i <vector>", "correct": false}]}, {"number": 27, "question": "Šta se dobija primenom specifikatora explicit ispred konstruktora?", "answer": "Sprecava se implicitna konverzija, sprecava se nezeljeno automatsko kreiranje objekata i omogucava se veca sigurnost koda\nA obj = 5; ne moze\nA obj(5); moze", "choices": [{"text": "Koristi se kod virtuelnih funkcija kada se saopstava da je to konacna verzija te funckije i da se ona ne moze redefinisati dalje i kod klasa sa se zabrani dalje nasledjivanje.", "correct": false}, {"text": "Odgovor: Poziv funkcije mora biti takav da kompajler može nedvosmisleno odrediti (dedukovati) tipove parametara šablona na osnovu argumenata, ili se tipovi moraju navesti eksplicitno (npr. fun<int>()).", "correct": false}, {"text": "Tipski parametri(tipovi)(typename ili class), netipski parametri(vrednosti)(npr int) i sabloni", "correct": false}, {"text": "Sprecava se implicitna konverzija, sprecava se nezeljeno automatsko kreiranje objekata i omogucava se veca sigurnost koda A obj = 5; ne moze A obj(5); moze", "correct": true}]}, {"number": 28, "question": "Kako treba da izgleda drugi argument konstruktora kopije?", "answer": "Ne mora nuzno da postoji drugi paramtar u kopi konstrukru, ali ako postoji onda je to neki parametar koji ima podrazumevanu vrednost", "choices": [{"text": "Odgovor: Mehanizam se sastoji od tri ključna dela: try blok: Okružuje kod u kojem se može pojaviti greška. throw naredba: Služi za \"bacanje\" (izazivanje) izuzetka kada se uoči problem. catch blok (handler): Sledi odmah nakon try bloka i služi za hvatanje i obradu izuzetka određenog tipa.", "correct": false}, {"text": "Odgovor: Funkcija write služi za neformatirani (binarni) upis niza bajtova u izlazni tok. Prima pokazivač na bafer i broj bajtova koje treba upisati.", "correct": false}, {"text": "Svi public i protected članovi osnovne klase postaju private u izvedenoj klasi. Oni su dostupni unutar izvedene klase, ali nisu dostupni korisnicima te klase niti njenim daljim potomcima.", "correct": false}, {"text": "Ne mora nuzno da postoji drugi paramtar u kopi konstrukru, ali ako postoji onda je to neki parametar koji ima podrazumevanu vrednost", "correct": true}]}, {"number": 29, "question": "Šta treba uraditi da izvedena klasa poseduje samo jedan podobjekat indirektne osnovne klase?", "answer": "Potrebno je koristiti virtuelno nasleđivanje (ključna reč virtual) prilikom izvođenja srednjih klasa iz te osnovne.", "choices": [{"text": "Odgovor: Funkcija write služi za neformatirani (binarni) upis niza bajtova u izlazni tok. Prima pokazivač na bafer i broj bajtova koje treba upisati.", "correct": false}, {"text": "Odgovor: Namena ove funkcije je da pročita jedan karakter iz ulaznog toka i smesti ga u referencu znak. Za razliku od operatora >>, ova funkcija ne preskače praznine (space, tab, enter).", "correct": false}, {"text": "Funkcija mora biti deklarisana kao virtual u osnovnoj klasi, a poziv se mora obaviti preko pokazivača ili reference na osnovnu klasu koji u trenutku izvršavanja pokazuje na objekat izvedene klase.", "correct": false}, {"text": "Potrebno je koristiti virtuelno nasleđivanje (ključna reč virtual) prilikom izvođenja srednjih klasa iz te osnovne.", "correct": true}]}, {"number": 30, "question": "Koje osobine operatora ne mogu da se menjaju?", "answer": "ne mogu da se redefinisu ., .*, ::, ?, sizeof\nne mogu da se redefinisu znacenja operatora za standardne tipove podataka(npr + ce uvek da sabira dva int broja)\nne mogu novi simboli koji nisu operatori da budu operatori(npr ne moze operatorm ili tako neka glupost)\nne menjaju se osobine kao sto su prioritet i asocijativnost i broj operanada", "choices": [{"text": "Apstraktna klasa je klasa koja sadrzi barem jednu cistu virtuelnu funkciju. Ne moze imati instance vec se iz nje samo mogu izvoditi druge klase. Mogu se napraviti pokazivaci i reference na apstraktnu klasu. Oni mogu samo da ukazuju na objekte izvedenih klasa.", "correct": false}, {"text": "Odgovor: Za operator >>= (operator dodele sa pomeranjem udesno) važi desna asocijativnost. To znači da se u izrazima gde se ovaj operator pojavljuje više puta, operacije izvršavaju s desna na levo. Na primer, izraz a >>= b >>= c se interpretira kao da su dodate zagrade na sledeći način: a >>= (b >>= c). s desna na levo", "correct": false}, {"text": "Odgovor: Namena ove funkcije je da pročita jedan karakter iz ulaznog toka i smesti ga u referencu znak. Za razliku od operatora >>, ova funkcija ne preskače praznine (space, tab, enter).", "correct": false}, {"text": "ne mogu da se redefinisu ., .*, ::, ?, sizeof ne mogu da se redefinisu znacenja operatora za standardne tipove podataka(npr + ce uvek da sabira dva int broja) ne mogu novi simboli koji nisu operatori da budu operatori(npr ne moze operatorm ili tako neka glupost) ne menjaju se osobine kao sto su prioritet i...", "correct": true}]}, {"number": 31, "question": "Koliko se maksimalno može kreirati standardnih tokova?", "answer": "U C++ standardu postoje tačno 8 standardnih tokova:\ncin, cout, cerr, clog (za char)\nwcin, wcout, wcerr, wclog (za wchar_t)", "choices": [{"text": "Iteratori su klase ciji objekti predstavljaju pozicije elemenata u razlicitim kontejnerskim klasama. Iteratori se uvek pridruzuju nekoj kontejnerskoj klasi.", "correct": false}, {"text": "ne mogu da se redefinisu ., .*, ::, ?, sizeof ne mogu da se redefinisu znacenja operatora za standardne tipove podataka(npr + ce uvek da sabira dva int broja) ne mogu novi simboli koji nisu operatori da budu operatori(npr ne moze operatorm ili tako neka glupost) ne menjaju se osobine kao sto su prioritet i...", "correct": false}, {"text": "U C++ standardu postoje tačno 8 standardnih tokova: cin, cout, cerr, clog (za char) wcin, wcout, wcerr, wclog (za wchar_t)", "correct": true}, {"text": "Odgovor: Kolekcija se mora realizovati kao niz (ili kontejner) pokazivača ili referenci na osnovnu klasu. Na taj način, svaki element kolekcije može pokazivati na objekte različitih izvedenih klasa, a poziv virtuelnih funkcija će se vršiti polimorfno u vreme izvršavanja.", "correct": false}]}, {"number": 32, "question": "Navesti redosled poziva konstruktora pri kreiranju objekta izvedene klase.", "answer": "Prvo se pozivaju konstruktori osnovnih klasa (po redosledu navođenja u listi nasleđivanja).\nZatim se pozivaju konstruktori članova objekata (atributa) klase.\nNa kraju se izvršava telo konstruktora same izvedene klase.", "choices": [{"text": "Odgovor: Za operator >>= (operator dodele sa pomeranjem udesno) važi desna asocijativnost. To znači da se u izrazima gde se ovaj operator pojavljuje više puta, operacije izvršavaju s desna na levo. Na primer, izraz a >>= b >>= c se interpretira kao da su dodate zagrade na sledeći način: a >>= (b >>= c). s desna na levo", "correct": false}, {"text": "difoltni konstruktor, destruktor, kopi konstruktor, operator=, friend metode i klase osnovne klase", "correct": false}, {"text": "Hendler catch (A &a) može prihvatiti izuzetak tipa B ako je:  je tip B isti kao A, ili  je A javna osnovna klasa (public base class) klase B (polimorfizam — hvatanje po osnovnoj klasi), ili  je tip A = void*, a izuzetak je bilo koji pokazivački tip.", "correct": false}, {"text": "Prvo se pozivaju konstruktori osnovnih klasa (po redosledu navođenja u listi nasleđivanja). Zatim se pozivaju konstruktori članova objekata (atributa) klase. Na kraju se izvršava telo konstruktora same izvedene klase.", "correct": true}]}, {"number": 33, "question": "Koji je uslov za aktiviranje virtuelnog mehanizma?", "answer": "Da bi se desio polimorfizam (dinamičko vezivanje), moraju biti ispunjena dva uslova:\nFunkcija u osnovnoj klasi mora biti deklarisana kao virtual.\nPoziv funkcije mora se vršiti preko pokazivača ili reference na osnovnu klasu koji pokazuje na objekat izvedene klase.", "choices": [{"text": "Tipski parametri(tipovi)(typename ili class), netipski parametri(vrednosti)(npr int) i sabloni", "correct": false}, {"text": "Da bi se desio polimorfizam (dinamičko vezivanje), moraju biti ispunjena dva uslova: Funkcija u osnovnoj klasi mora biti deklarisana kao virtual. Poziv funkcije mora se vršiti preko pokazivača ili reference na osnovnu klasu koji pokazuje na objekat izvedene klase.", "correct": true}, {"text": "Imena se kreiraju korišćenjem ključne reči operator nakon koje sledi sam simbol operatora koji se preklapa (npr. operator+, operator==, operator[]).", "correct": false}, {"text": "Funkcije se kao parametri sablona prenose preko pokazivaca na funkcije.", "correct": false}]}, {"number": 34, "question": "Iz kojih funkcija se mogu izazvati izuzeci?", "answer": "Izuzeci se mogu izazvati (koristeći throw) iz bilo koje funkcije, uključujući obične funkcije, metode klasa, konstruktore, pa čak i operatore. Ipak, izbegava se bacanje izuzetaka iz destruktora jer to može dovesti do nasilnog prekida programa (std::terminate) tokom \"unwinding-a\" steka.", "choices": [{"text": "Iteratori su klase ciji objekti predstavljaju pozicije elemenata u razlicitim kontejnerskim klasama. Iteratori se uvek pridruzuju nekoj kontejnerskoj klasi.", "correct": false}, {"text": "Za korisničke tipove (klase/strukture) C++ automatski definiše: Operator dodele (operator=). Adresni operator (operator&). Operator pristupa članu (operator.). Operator za zarez (operator,).", "correct": false}, {"text": "Potrebno je koristiti virtuelno nasleđivanje (ključna reč virtual) prilikom izvođenja srednjih klasa iz te osnovne.", "correct": false}, {"text": "Izuzeci se mogu izazvati (koristeći throw) iz bilo koje funkcije, uključujući obične funkcije, metode klasa, konstruktore, pa čak i operatore. Ipak, izbegava se bacanje izuzetaka iz destruktora jer to može dovesti do nasilnog prekida programa (std::terminate) tokom \"unwinding-a\" steka.", "correct": true}]}, {"number": 35, "question": "Iz kojih funkcija se ne mogu izazvati izuzeci?", "answer": "Iz funkcija ispred kojih stoji modifikator noexcept (ovo se nadam da je tacno, nema mi smisla da ista drugo bude) i iz destruktora (jer to dovodi do terminacije programa ako je već u toku obrada drugog izuzetka)..", "choices": [{"text": "Kod protected nasleđivanja: public članovi osnovne klase postaju protected u izvedenoj. protected članovi osnovne klase ostaju protected u izvedenoj. private članovi ostaju nedostupni. To znači da korisnici izvedene klase ne mogu videti te članove, ali klase koje se dalje izvode iz nje mogu.", "correct": false}, {"text": "Iz funkcija ispred kojih stoji modifikator noexcept (ovo se nadam da je tacno, nema mi smisla da ista drugo bude) i iz destruktora (jer to dovodi do terminacije programa ako je već u toku obrada drugog izuzetka)..", "correct": true}, {"text": "Odgovor: Redosled faza je: Pretprocesiranje (obrada direktiva poput #include), Kompilacija (prevođenje u izvorni mašinski kod), Asembliranje (kreiranje objektnih fajlova) i Linkovanje (povezivanje objektnih fajlova i biblioteka u izvršni program).", "correct": false}, {"text": "Poziv mora biti takav da kompajler može nedvosmisleno dedukovati (zaključiti) tipove parametara šablona iz argumenata poziva, ili tipovi moraju biti eksplicitno navedeni.", "correct": false}]}, {"number": 36, "question": "Ako levi operanad operatorske funkcije treba da bude standardnog tipa, kako se mora definisati ova funkcija?", "answer": "Mora se definisati kao globalna funkcija (često se deklariše kao friend unutar klase). Ne može biti metoda klase jer prvi parametar kod metoda mora biti objekat te klase.", "choices": [{"text": "Konstruktori se pozivaju kad se objekti definisu tj. svaki put kad u toku izvrsenja dobiju scope, destruktori se pozivaju kad objekti prestanu da vaze tj. gube scope, a to je kada se zavrsava blok u kome je objekat definisan. Destruktor se ne poziva ako se program zavrsi sa exit ili abort.", "correct": false}, {"text": "Mora se definisati kao globalna funkcija (često se deklariše kao friend unutar klase). Ne može biti metoda klase jer prvi parametar kod metoda mora biti objekat te klase.", "correct": true}, {"text": "Nema odgovora u dokumentu.", "correct": false}, {"text": "U C++ jeziku statičke članice ne mogu biti virtuelne. Ključne reči static i virtual su međusobno isključive za istu funkciju.", "correct": false}]}, {"number": 37, "question": "Koji su operatori podrazumevano definisani za korisničke tipove?", "answer": "Za korisničke tipove (klase/strukture) C++ automatski definiše:\nOperator dodele (operator=).\nAdresni operator (operator&).\nOperator pristupa članu (operator.).\nOperator za zarez (operator,).", "choices": [{"text": "Odgovor: Moguće je imati samo jedan cin objekat (odnosno jedan wcin za široke karaktere) koji je povezan sa standardnim ulazom, jer je on globalni statički objekat definisan u standardnoj biblioteci.", "correct": false}, {"text": "Hendler catch (A &a) može prihvatiti izuzetak tipa B ako je:  je tip B isti kao A, ili  je A javna osnovna klasa (public base class) klase B (polimorfizam — hvatanje po osnovnoj klasi), ili  je tip A = void*, a izuzetak je bilo koji pokazivački tip.", "correct": false}, {"text": "Za korisničke tipove (klase/strukture) C++ automatski definiše: Operator dodele (operator=). Adresni operator (operator&). Operator pristupa članu (operator.). Operator za zarez (operator,).", "correct": true}, {"text": "Redosled mora biti od najizvedenije ka osnovnoj klasi: A, pa B, pa C. (Ako bi stavio C prvu, ona bi \"uhvatila\" i A i B jer je ona njihova osnovna klasa).", "correct": false}]}, {"number": 38, "question": "Karakteristike zaštićenog (protected) nasleđivanja?", "answer": "Kod protected nasleđivanja:\npublic članovi osnovne klase postaju protected u izvedenoj.\nprotected članovi osnovne klase ostaju protected u izvedenoj.\nprivate članovi ostaju nedostupni. To znači da korisnici izvedene klase ne mogu videti te članove, ali klase koje se dalje izvode iz nje mogu.", "choices": [{"text": "Kod protected nasleđivanja: public članovi osnovne klase postaju protected u izvedenoj. protected članovi osnovne klase ostaju protected u izvedenoj. private članovi ostaju nedostupni. To znači da korisnici izvedene klase ne mogu videti te članove, ali klase koje se dalje izvode iz nje mogu.", "correct": true}, {"text": "S obzirom na to da je cela Klasa prijatelj klase DrugaKlasa, njena metoda fun() ima pristup svim članovima (atributima i metodama) klase DrugaKlasa, bez obzira na njihov nivo pristupa: public, protected i private.", "correct": false}, {"text": "kao prefiksa i postfiksna funckija Kao postfiksna vraca objekat, pravi kopiju objekta i vraca staru vrednost, ima parametar int koji sluzi kao pomoc kompajleru T operator++(int); Kao prefiksna vraca referencu na objekat, menja objekat i vraca novu izmenjenu vrednost T& operator++();", "correct": false}, {"text": "Odgovor: Poziva se u tri situacije: 1. Prilikom inicijalizacije novog objekta već postojećim objektom iste klase; 2. Prilikom prenošenja objekta u funkciju po vrednosti (kao argument); 3. Prilikom vraćanja objekta iz funkcije po vrednosti.", "correct": false}]}, {"number": 39, "question": "U kojim slučajevima hendler tipa A može da prihvati izuzetak tipa B?", "answer": "Hendler catch (A &a) može prihvatiti izuzetak tipa B ako je:\n  je tip B isti kao A, ili\n  je A javna osnovna klasa (public base class) klase B (polimorfizam — hvatanje po osnovnoj klasi), ili\n  je tip A = void*, a izuzetak je bilo koji pokazivački tip.", "choices": [{"text": "Hendler catch (A &a) može prihvatiti izuzetak tipa B ako je:  je tip B isti kao A, ili  je A javna osnovna klasa (public base class) klase B (polimorfizam — hvatanje po osnovnoj klasi), ili  je tip A = void*, a izuzetak je bilo koji pokazivački tip.", "correct": true}, {"text": "Maksimalan broj standardnih tokova je fiksiran na 8 prema samoj specifikaciji C++ standarda. Taj broj zavisi od postojanja četiri namenska toka (in, out, err, log) koji su duplirani kako bi podržali dva tipa karaktera (obične char i široke wchar_t).", "correct": false}, {"text": "Koristi se kod virtuelnih funkcija kada se saopstava da je to konacna verzija te funckije i da se ona ne moze redefinisati dalje i kod klasa sa se zabrani dalje nasledjivanje.", "correct": false}, {"text": "Odgovor: Može sadržati proizvoljan broj blanko znakova pre samog podatka, jer ih operator >> po podrazumevanom podešavanju preskače (ignoriše) dok ne naiđe na prvi ne-prazan karakter.", "correct": false}]}, {"number": 41, "question": "Podrazumevano ponašanje konstruktora kopije:", "answer": "Vrši se tzv. plitko kopiranje (shallow copy), gde se svaki podatak-član kopira bajt-po-bajt iz izvornog objekta u novi.", "choices": [{"text": "Vrši se tzv. plitko kopiranje (shallow copy), gde se svaki podatak-član kopira bajt-po-bajt iz izvornog objekta u novi.", "correct": true}, {"text": "Navodi se pomocu naredbe throw(niz_identifikatora) iza liste argumenata.", "correct": false}, {"text": "Odgovor: Za operator >>= (operator dodele sa pomeranjem udesno) važi desna asocijativnost. To znači da se u izrazima gde se ovaj operator pojavljuje više puta, operacije izvršavaju s desna na levo. Na primer, izraz a >>= b >>= c se interpretira kao da su dodate zagrade na sledeći način: a >>= (b >>= c). s desna na levo", "correct": false}, {"text": "Odgovor: Može sadržati proizvoljan broj blanko znakova pre samog podatka, jer ih operator >> po podrazumevanom podešavanju preskače (ignoriše) dok ne naiđe na prvi ne-prazan karakter.", "correct": false}]}, {"number": 42, "question": "Koji uslov treba da zadovolji poziv funkcije za koju ne postoji odgovarajuća definicija, da bi se generisala odgovarajuća funkcija na osnovu šablona?", "answer": "Poziv mora biti takav da kompajler može nedvosmisleno dedukovati (zaključiti) tipove parametara šablona iz argumenata poziva, ili tipovi moraju biti eksplicitno navedeni.", "choices": [{"text": "Poziv mora biti takav da kompajler može nedvosmisleno dedukovati (zaključiti) tipove parametara šablona iz argumenata poziva, ili tipovi moraju biti eksplicitno navedeni.", "correct": true}, {"text": "Odgovor: Redosled faza je: Pretprocesiranje (obrada direktiva poput #include), Kompilacija (prevođenje u izvorni mašinski kod), Asembliranje (kreiranje objektnih fajlova) i Linkovanje (povezivanje objektnih fajlova i biblioteka u izvršni program).", "correct": false}, {"text": "Prijateljske mogu biti obične (globalne) funkcije ili metode neke druge klase.", "correct": false}, {"text": "Imace isti tip kao prethodno uhvaćeni izuzetak (rethrow), a ne novi tip. (validan je samo unutar catch bloka) Međutim, ukoliko se throw; pozove van catch bloka (kada ne postoji aktivan izuzetak), on ne može odrediti tip, što dovodi do pozivanja funkcije std::terminate() i momentalnog prekida programa.", "correct": false}]}, {"number": 43, "question": "Ako je fun() metoda klase Klasa koja je prijateljska klasa klasi DrugaKlasa, kojim atributima klase DrugaKlasa može da se pristupi u funkciji fun()?", "answer": "S obzirom na to da je cela Klasa prijatelj klase DrugaKlasa, njena metoda fun() ima pristup svim članovima (atributima i metodama) klase DrugaKlasa, bez obzira na njihov nivo pristupa: public, protected i private.", "choices": [{"text": "Iteratori su klase ciji objekti predstavljaju pozicije elemenata u razlicitim kontejnerskim klasama. Iteratori se uvek pridruzuju nekoj kontejnerskoj klasi.", "correct": false}, {"text": "Odgovor: 1. Prvo se pozivaju konstruktori osnovnih klasa (po redosledu navođenja u listi nasleđivanja). 2. Zatim se pozivaju konstruktori članova objekata (atributa koji su sami po sebi objekti). 3. Na kraju se izvršava telo konstruktora same izvedene klase.", "correct": false}, {"text": "S obzirom na to da je cela Klasa prijatelj klase DrugaKlasa, njena metoda fun() ima pristup svim članovima (atributima i metodama) klase DrugaKlasa, bez obzira na njihov nivo pristupa: public, protected i private.", "correct": true}, {"text": "Clanovima klase se pristupa pomocu 2 operatora : Operator . za objekte i reference objekta, operator -> za pokazivace.", "correct": false}]}, {"number": 44, "question": "Koja vrsta asocijativnosti važi za operator <=>?", "answer": "Operator \"spaceship\" (<=>), uveden u C++20 standardu, ima ne-asocijativno ponašanje (eng. non-associative). To znači da izrazi poput a <=> b <=> c nisu dozvoljeni i izazvaće grešku pri kompilaciji.", "choices": [{"text": "Odgovor: Kolekcija se mora realizovati kao niz (ili kontejner) pokazivača ili referenci na osnovnu klasu. Na taj način, svaki element kolekcije može pokazivati na objekte različitih izvedenih klasa, a poziv virtuelnih funkcija će se vršiti polimorfno u vreme izvršavanja.", "correct": false}, {"text": "Operator \"spaceship\" (<=>), uveden u C++20 standardu, ima ne-asocijativno ponašanje (eng. non-associative). To znači da izrazi poput a <=> b <=> c nisu dozvoljeni i izazvaće grešku pri kompilaciji.", "correct": true}, {"text": "Svi public i protected članovi osnovne klase postaju private u izvedenoj klasi. Oni su dostupni unutar izvedene klase, ali nisu dostupni korisnicima te klase niti njenim daljim potomcima.", "correct": false}, {"text": "Odgovor: Šabloni klasa se po pravilu deklarišu na nivou imenskog prostora (globalno), jer C++ ne dozvoljava definisanje šablona unutar funkcija (lokalno).", "correct": false}]}, {"number": 45, "question": "Kako se kreiraju imena operatorskih funkcija?", "answer": "Imena se kreiraju korišćenjem ključne reči operator nakon koje sledi sam simbol operatora koji se preklapa (npr. operator+, operator==, operator[]).", "choices": [{"text": "Odgovor: Namena klase ostrstream je izlazni tok podataka ka nizu karaktera u memoriji (C-string).", "correct": false}, {"text": "Kod ključne reči class podrazumevano nasleđivanje je private, dok je kod ključne reči struct podrazumevano public.", "correct": false}, {"text": "Imena se kreiraju korišćenjem ključne reči operator nakon koje sledi sam simbol operatora koji se preklapa (npr. operator+, operator==, operator[]).", "correct": true}, {"text": "Odgovor: Objektu osnovne klase se mogu dodeliti objekti izvedenih klasa (tzv. \"upcasting\"). Međutim, važno je napomenuti da će u tom slučaju doći do pojave poznate kao \"slicing\" (odsecanje), gde će se kopirati samo onaj deo izvedenog objekta koji pripada osnovnoj klasi.", "correct": false}]}, {"number": 46, "question": "Dinamičko povezivanje.", "answer": "Dinamičko povezivanje (eng. late binding) je mehanizam kojim se odluka o tome koja će se funkcija pozvati donosi u vreme izvršavanja (runtime), a ne u vreme kompilacije. Ovo se u C++ ostvaruje putem virtuelnih funkcija i pokazivača/referenci na osnovnu klasu.\nDinamičko povezivanje (late binding) je mehanizam kod koga se odluka o tome koja će se funkcija pozvati donosi u vreme izvršavanja programa (runtime), a ne u vreme prevođenja.\nFunkcija koja se poziva određuje se prema stvarnom tipu objekta, a ne prema tipu pokazivača ili reference preko koje se objektu pristupa.\nU C++ se ostvaruje pomoću virtuelnih funkcija i poziva preko pokazivača ili referenci na osnovnu klasu.", "choices": [{"text": "Imena se kreiraju korišćenjem ključne reči operator nakon koje sledi sam simbol operatora koji se preklapa (npr. operator+, operator==, operator[]).", "correct": false}, {"text": "Odgovor: Potrebno je uključiti zaglavlje <algorithm> (gde se nalazi funkcija find) i zaglavlje <list> (za samu kontejnersku klasu).", "correct": false}, {"text": "Odgovor: Za operator >>= (operator dodele sa pomeranjem udesno) važi desna asocijativnost. To znači da se u izrazima gde se ovaj operator pojavljuje više puta, operacije izvršavaju s desna na levo. Na primer, izraz a >>= b >>= c se interpretira kao da su dodate zagrade na sledeći način: a >>= (b >>= c). s desna na levo", "correct": false}, {"text": "Dinamičko povezivanje (eng. late binding) je mehanizam kojim se odluka o tome koja će se funkcija pozvati donosi u vreme izvršavanja (runtime), a ne u vreme kompilacije. Ovo se u C++ ostvaruje putem virtuelnih funkcija i pokazivača/referenci na osnovnu klasu. Dinamičko povezivanje (late binding) je mehanizam kod koga...", "correct": true}]}, {"number": 47, "question": "Šta se dešava ako se pojavi izuzetak u funkciji koja je označena kao noexcept?", "answer": "Ako funkcija deklarisana sa noexcept pokuša da izbaci izuzetak koji se ne obradi unutar nje, program odmah poziva funkciju std::terminate() koja nasilno prekida izvršavanje programa.", "choices": [{"text": "Služi za pomeranje ulaznog pokazivača (eng. get pointer) unutar ulaznog toka podataka (fajla) na određenu poziciju.", "correct": false}, {"text": "Odgovor: Na nula načina. U C++ jeziku konstruktori ne mogu biti virtuelni. (Napomena: Ponekad se pod ovim terminom misli na \"virtual copy constructor\" koji se simulira metodom clone(), ali standardni virtuelni konstruktor ne postoji).", "correct": false}, {"text": "Ako funkcija deklarisana sa noexcept pokuša da izbaci izuzetak koji se ne obradi unutar nje, program odmah poziva funkciju std::terminate() koja nasilno prekida izvršavanje programa.", "correct": true}, {"text": "Imace isti tip kao prethodno uhvaćeni izuzetak (rethrow), a ne novi tip. (validan je samo unutar catch bloka) Međutim, ukoliko se throw; pozove van catch bloka (kada ne postoji aktivan izuzetak), on ne može odrediti tip, što dovodi do pozivanja funkcije std::terminate() i momentalnog prekida programa.", "correct": false}]}, {"number": 48, "question": "Napisati zaglavlje funkcije članice operator>> klase istream", "answer": "Ovaj operator se obično definiše kao globalna funkcija, ali ako se posmatra kao članica klase istream, prototip izgleda ovako: istream& operator>>(Tip& obj);.\nIli ovako - friend istream& operator>> (istream& i, MyClass& mc);", "choices": [{"text": "Apstraktna klasa ne moze imati objekte.", "correct": false}, {"text": "Funkcija mora biti deklarisana kao virtual u osnovnoj klasi, a poziv se mora obaviti preko pokazivača ili reference na osnovnu klasu koji u trenutku izvršavanja pokazuje na objekat izvedene klase.", "correct": false}, {"text": "Ovaj operator se obično definiše kao globalna funkcija, ali ako se posmatra kao članica klase istream, prototip izgleda ovako: istream& operator>>(Tip& obj);. Ili ovako - friend istream& operator>> (istream& i, MyClass& mc);", "correct": true}, {"text": "Student(Student&& s) noexcept;", "correct": false}]}, {"number": 49, "question": "Kako se referenca objekta osnovne klase moze konvertovati u referencu objekta izvedene klase i pod kojim uslovom?", "answer": "Referenca na objekat osnovne klase se moze samo eksplicitno konvertovati u referencu na objekat javno izvedene klase i to samo ako zaista ukazuje na objekat javno izvedene klase.", "choices": [{"text": "Referenca na objekat osnovne klase se moze samo eksplicitno konvertovati u referencu na objekat javno izvedene klase i to samo ako zaista ukazuje na objekat javno izvedene klase.", "correct": true}, {"text": "class A : private B {...} svi public i protected atributi i metode iz B su sada u A private, a private delovi klase B jesu nasledjeni, ali im se ne moze direktno pristupiti Klasa A se ne moze koristiti polimorfno kao B", "correct": false}, {"text": "Clanovima klase se pristupa pomocu 2 operatora : Operator . za objekte i reference objekta, operator -> za pokazivace.", "correct": false}, {"text": "Odgovor: Predstavljaju šablone (templates) koji omogućavaju pisanje generičkog koda. Oni dozvoljavaju da se isti algoritmi ili strukture podataka koriste sa različitim tipovima podataka, koji se specificiraju tek prilikom instanciranja (npr. vector<int> ili vector<double>).", "correct": false}]}, {"number": 50, "question": "Koje funkcije mogu da budu prijateljske funkcije?", "answer": "Prijateljske mogu biti obične (globalne) funkcije ili metode neke druge klase.", "choices": [{"text": "Odgovor: Konstruktori se pozivaju tacno jedanput kada se dodje do mesta gde je objekat definisan. Destruktor se poziva tek na kraju rada celog programa.", "correct": false}, {"text": "Izuzeci se mogu izazvati (koristeći throw) iz bilo koje funkcije, uključujući obične funkcije, metode klasa, konstruktore, pa čak i operatore. Ipak, izbegava se bacanje izuzetaka iz destruktora jer to može dovesti do nasilnog prekida programa (std::terminate) tokom \"unwinding-a\" steka.", "correct": false}, {"text": "Prijateljske mogu biti obične (globalne) funkcije ili metode neke druge klase.", "correct": true}, {"text": "Odgovor: Kompajler ne vrši klasičan poziv funkcije preko steka, već umeće (kopira) telo funkcije direktno na mesto gde je ona pozvana u kodu kako bi se ubrzalo izvršavanje.", "correct": false}]}, {"number": 51, "question": "Kako se definiše virtuelna statička članica klase?", "answer": "U C++ jeziku statičke članice ne mogu biti virtuelne. Ključne reči static i virtual su međusobno isključive za istu funkciju.", "choices": [{"text": "Dinamičko povezivanje (eng. late binding) je mehanizam kojim se odluka o tome koja će se funkcija pozvati donosi u vreme izvršavanja (runtime), a ne u vreme kompilacije. Ovo se u C++ ostvaruje putem virtuelnih funkcija i pokazivača/referenci na osnovnu klasu. Dinamičko povezivanje (late binding) je mehanizam kod koga...", "correct": false}, {"text": "Odgovor: Poziv funkcije mora biti takav da kompajler može nedvosmisleno odrediti (dedukovati) tipove parametara šablona na osnovu argumenata, ili se tipovi moraju navesti eksplicitno (npr. fun<int>()).", "correct": false}, {"text": "Funkcije se kao parametri sablona prenose preko pokazivaca na funkcije.", "correct": false}, {"text": "U C++ jeziku statičke članice ne mogu biti virtuelne. Ključne reči static i virtual su međusobno isključive za istu funkciju.", "correct": true}]}, {"number": 52, "question": "Kako treba realizovati funkciju Zakon operator+(int kazna, Osoba v)?", "answer": "Mora se realizovati kao globalna funkcija (često kao friend klase Zakon ili Osoba) jer je levi operanad tipa int, a ne objekat klase.", "choices": [{"text": "Odgovor: Konstruktori globalnih objekata se pozivaju pre ulaska u main() funkciju, a njihovi destruktori se pozivaju nakon završetka main() funkcije, u obrnutom redosledu od redosleda kreiranja.", "correct": false}, {"text": "ne mogu da se redefinisu ., .*, ::, ?, sizeof ne mogu da se redefinisu znacenja operatora za standardne tipove podataka(npr + ce uvek da sabira dva int broja) ne mogu novi simboli koji nisu operatori da budu operatori(npr ne moze operatorm ili tako neka glupost) ne menjaju se osobine kao sto su prioritet i...", "correct": false}, {"text": "Odgovor: Ušteda će biti nula (0). Razlog je taj što kompajler ignoriše zahtev za inline kod rekurzivnih funkcija, jer ne može da izvrši beskonačno (ili neizvesno) razmotavanje koda u fazi kompilacije.", "correct": false}, {"text": "Mora se realizovati kao globalna funkcija (često kao friend klase Zakon ili Osoba) jer je levi operanad tipa int, a ne objekat klase.", "correct": true}]}, {"number": 53, "question": "Koje je dejstvo metode seekg?", "answer": "Služi za pomeranje ulaznog pokazivača (eng. get pointer) unutar ulaznog toka podataka (fajla) na određenu poziciju.", "choices": [{"text": "Mora se definisati kao globalna funkcija (često se deklariše kao friend unutar klase). Ne može biti metoda klase jer prvi parametar kod metoda mora biti objekat te klase.", "correct": false}, {"text": "Imena se kreiraju korišćenjem ključne reči operator nakon koje sledi sam simbol operatora koji se preklapa (npr. operator+, operator==, operator[]).", "correct": false}, {"text": "Služi za pomeranje ulaznog pokazivača (eng. get pointer) unutar ulaznog toka podataka (fajla) na određenu poziciju.", "correct": true}, {"text": "Kod ključne reči class podrazumevano nasleđivanje je private, dok je kod ključne reči struct podrazumevano public.", "correct": false}]}, {"number": 54, "question": "Koje vrste specijalizacije su moguće kod generičkih funkcija?", "answer": "Moguća je samo potpuna (eksplicitna) specijalizacija. Delimična specijalizacija je rezervisana isključivo za klase.", "choices": [{"text": "Odgovor: 1. Prvo se pozivaju konstruktori osnovnih klasa (po redosledu navođenja u listi nasleđivanja). 2. Zatim se pozivaju konstruktori članova objekata (atributa koji su sami po sebi objekti). 3. Na kraju se izvršava telo konstruktora same izvedene klase.", "correct": false}, {"text": "Moguća je samo potpuna (eksplicitna) specijalizacija. Delimična specijalizacija je rezervisana isključivo za klase.", "correct": true}, {"text": "Odgovor: Mehanizam se sastoji od tri ključna dela: try blok: Okružuje kod u kojem se može pojaviti greška. throw naredba: Služi za \"bacanje\" (izazivanje) izuzetka kada se uoči problem. catch blok (handler): Sledi odmah nakon try bloka i služi za hvatanje i obradu izuzetka određenog tipa.", "correct": false}, {"text": "Kod protected nasleđivanja: public članovi osnovne klase postaju protected u izvedenoj. protected članovi osnovne klase ostaju protected u izvedenoj. private članovi ostaju nedostupni. To znači da korisnici izvedene klase ne mogu videti te članove, ali klase koje se dalje izvode iz nje mogu.", "correct": false}]}, {"number": 55, "question": "Karakteristike privatnog nasleđivanja.", "answer": "Svi public i protected članovi osnovne klase postaju private u izvedenoj klasi. Oni su dostupni unutar izvedene klase, ali nisu dostupni korisnicima te klase niti njenim daljim potomcima.", "choices": [{"text": "class A : private B {...} svi public i protected atributi i metode iz B su sada u A private, a private delovi klase B jesu nasledjeni, ali im se ne moze direktno pristupiti Klasa A se ne moze koristiti polimorfno kao B", "correct": false}, {"text": "Svi public i protected članovi osnovne klase postaju private u izvedenoj klasi. Oni su dostupni unutar izvedene klase, ali nisu dostupni korisnicima te klase niti njenim daljim potomcima.", "correct": true}, {"text": "Odgovor: Redosled je obrnut u odnosu na konstruktore: Prvo se izvršava telo destruktora izvedene klase. Zatim se pozivaju destruktori članova (podobjekata) izvedene klase. Na kraju se pozivaju destruktori osnovnih klasa", "correct": false}, {"text": "Konstruktori se pozivaju kad se objekti definisu tj. svaki put kad u toku izvrsenja dobiju scope, destruktori se pozivaju kad objekti prestanu da vaze tj. gube scope, a to je kada se zavrsava blok u kome je objekat definisan. Destruktor se ne poziva ako se program zavrsi sa exit ili abort.", "correct": false}]}, {"number": 56, "question": "Koja vrsta asocijativnosti važi za složene (composite) operatore dodele?", "answer": "Odgovor: Za operatore kao što su +=, -=, *=, /= važi desna asocijativnost (izračunavaju se zdesna nalevo).", "choices": [{"text": "Odgovor: Šabloni klasa se po pravilu deklarišu na nivou imenskog prostora (globalno), jer C++ ne dozvoljava definisanje šablona unutar funkcija (lokalno).", "correct": false}, {"text": "U C++ standardu postoje tačno 8 standardnih tokova: cin, cout, cerr, clog (za char) wcin, wcout, wcerr, wclog (za wchar_t)", "correct": false}, {"text": "Odgovor: Predstavljaju šablone (templates) koji omogućavaju pisanje generičkog koda. Oni dozvoljavaju da se isti algoritmi ili strukture podataka koriste sa različitim tipovima podataka, koji se specificiraju tek prilikom instanciranja (npr. vector<int> ili vector<double>).", "correct": false}, {"text": "Odgovor: Za operatore kao što su +=, -=, *=, /= važi desna asocijativnost (izračunavaju se zdesna nalevo).", "correct": true}]}, {"number": 57, "question": "Redosled poziva konstruktora pri kreiranju objekta klase C izvedene iz klase A i klase B.", "answer": "Odgovor: Prvo se poziva konstruktor klase A, zatim klase B (redosledom navođenja u listi nasleđivanja), pa tek onda konstruktor same klase C.", "choices": [{"text": "Odgovor: Mehanizam se sastoji od tri ključna dela: try blok: Okružuje kod u kojem se može pojaviti greška. throw naredba: Služi za \"bacanje\" (izazivanje) izuzetka kada se uoči problem. catch blok (handler): Sledi odmah nakon try bloka i služi za hvatanje i obradu izuzetka određenog tipa.", "correct": false}, {"text": "Sprecava se implicitna konverzija, sprecava se nezeljeno automatsko kreiranje objekata i omogucava se veca sigurnost koda A obj = 5; ne moze A obj(5); moze", "correct": false}, {"text": "Odgovor: Prvo se poziva konstruktor klase A, zatim klase B (redosledom navođenja u listi nasleđivanja), pa tek onda konstruktor same klase C.", "correct": true}, {"text": "Odgovor: U jednom fajlu može biti definisan samo jedan neimenovani (anonimni) namespace. Svi delovi koda koji se nalaze u anonimnim prostorima imena unutar istog fajla tretiraju se kao da pripadaju tom jednom jedinstvenom prostoru", "correct": false}]}, {"number": 58, "question": "Koja je namena funkcije istream &get(char& znak)?", "answer": "Odgovor: Namena ove funkcije je da pročita jedan karakter iz ulaznog toka i smesti ga u referencu znak. Za razliku od operatora >>, ova funkcija ne preskače praznine (space, tab, enter).", "choices": [{"text": "Odgovor: Može sadržati proizvoljan broj blanko znakova pre samog podatka, jer ih operator >> po podrazumevanom podešavanju preskače (ignoriše) dok ne naiđe na prvi ne-prazan karakter.", "correct": false}, {"text": "Ako funkcija deklarisana sa noexcept pokuša da izbaci izuzetak koji se ne obradi unutar nje, program odmah poziva funkciju std::terminate() koja nasilno prekida izvršavanje programa.", "correct": false}, {"text": "Prijateljske mogu biti obične (globalne) funkcije ili metode neke druge klase.", "correct": false}, {"text": "Odgovor: Namena ove funkcije je da pročita jedan karakter iz ulaznog toka i smesti ga u referencu znak. Za razliku od operatora >>, ova funkcija ne preskače praznine (space, tab, enter).", "correct": true}]}, {"number": 59, "question": "Navesti redosled poziva konstruktora pri kreiranju objekta izvedene klase.", "answer": "Odgovor: 1. Prvo se pozivaju konstruktori osnovnih klasa (po redosledu navođenja u listi nasleđivanja). 2. Zatim se pozivaju konstruktori članova objekata (atributa koji su sami po sebi objekti). 3. Na kraju se izvršava telo konstruktora same izvedene klase.", "choices": [{"text": "Da bi se desio polimorfizam (dinamičko vezivanje), moraju biti ispunjena dva uslova: Funkcija u osnovnoj klasi mora biti deklarisana kao virtual. Poziv funkcije mora se vršiti preko pokazivača ili reference na osnovnu klasu koji pokazuje na objekat izvedene klase.", "correct": false}, {"text": "Iteratori su klase ciji objekti predstavljaju pozicije elemenata u razlicitim kontejnerskim klasama. Iteratori se uvek pridruzuju nekoj kontejnerskoj klasi.", "correct": false}, {"text": "Odgovor: 1. Prvo se pozivaju konstruktori osnovnih klasa (po redosledu navođenja u listi nasleđivanja). 2. Zatim se pozivaju konstruktori članova objekata (atributa koji su sami po sebi objekti). 3. Na kraju se izvršava telo konstruktora same izvedene klase.", "correct": true}, {"text": "Odgovor: Namena ove funkcije je da pročita jedan karakter iz ulaznog toka i smesti ga u referencu znak. Za razliku od operatora >>, ova funkcija ne preskače praznine (space, tab, enter).", "correct": false}]}, {"number": 60, "question": "Nacrtati i objasniti sintaksni dijagram za mehanizam za obradu izuzetaka.", "answer": "Odgovor: Mehanizam se sastoji od tri ključna dela:\ntry blok: Okružuje kod u kojem se može pojaviti greška.\nthrow naredba: Služi za \"bacanje\" (izazivanje) izuzetka kada se uoči problem.\ncatch blok (handler): Sledi odmah nakon try bloka i služi za hvatanje i obradu izuzetka određenog tipa.", "choices": [{"text": "Porlazi kroz sortiran niz od drugog elementa od pocetka sve do pretposlednjeg elemnta i proverava da li su 10 (racunaju se i 2. pretposlednji element) Napisani kod je neispravan (zbog (nums.begin())++), ali kada bi bio ispravan radio bi ovo gore.", "correct": false}, {"text": "Odgovor: Mehanizam se sastoji od tri ključna dela: try blok: Okružuje kod u kojem se može pojaviti greška. throw naredba: Služi za \"bacanje\" (izazivanje) izuzetka kada se uoči problem. catch blok (handler): Sledi odmah nakon try bloka i služi za hvatanje i obradu izuzetka određenog tipa.", "correct": true}, {"text": "Odgovor: Objektu osnovne klase se mogu dodeliti objekti izvedenih klasa (tzv. \"upcasting\"). Međutim, važno je napomenuti da će u tom slučaju doći do pojave poznate kao \"slicing\" (odsecanje), gde će se kopirati samo onaj deo izvedenog objekta koji pripada osnovnoj klasi.", "correct": false}, {"text": "Apstraktna klasa ne moze imati objekte.", "correct": false}]}, {"number": 61, "question": "Šta predstavlja vrednost sledećeg izraza? &A[0] + 4*sizeof(A[0])", "answer": "Odgovor: Izraz predstavlja adresu petog elementa niza A (indeks A[4]). Budući da se na početnu adresu dodaje veličina četiri elementa, pokazivač se pomera na početak petog elementa u memoriji.", "choices": [{"text": "Moguća je samo potpuna (eksplicitna) specijalizacija. Delimična specijalizacija je rezervisana isključivo za klase.", "correct": false}, {"text": "Odgovor: Izraz predstavlja adresu petog elementa niza A (indeks A[4]). Budući da se na početnu adresu dodaje veličina četiri elementa, pokazivač se pomera na početak petog elementa u memoriji.", "correct": true}, {"text": "Operator noexcept(izraz) proverava u fazi prevođenja da li izraz može da generiše izuzetak. Izraz se ne izvršava, a rezultat je logička vrednost (true ako izraz ne baca izuzetak).", "correct": false}, {"text": "postrebno je <algorithm> i <vector>", "correct": false}]}, {"number": 62, "question": "7. Nacrtati sintaksni dijagram za definisanje izvedene klase.", "answer": "Nema odgovora u dokumentu.", "choices": [{"text": "Nema odgovora u dokumentu.", "correct": true}, {"text": "Prijateljske mogu biti obične (globalne) funkcije ili metode neke druge klase.", "correct": false}, {"text": "Odgovor: Poziva se u tri situacije: 1. Prilikom inicijalizacije novog objekta već postojećim objektom iste klase; 2. Prilikom prenošenja objekta u funkciju po vrednosti (kao argument); 3. Prilikom vraćanja objekta iz funkcije po vrednosti.", "correct": false}, {"text": "class A : private B {...} svi public i protected atributi i metode iz B su sada u A private, a private delovi klase B jesu nasledjeni, ali im se ne moze direktno pristupiti Klasa A se ne moze koristiti polimorfno kao B", "correct": false}]}, {"number": 63, "question": "Kako treba realizovati kolekciju objekata da bi se iskoristio polimorfizam?", "answer": "Odgovor: Kolekcija se mora realizovati kao niz (ili kontejner) pokazivača ili referenci na osnovnu klasu. Na taj način, svaki element kolekcije može pokazivati na objekte različitih izvedenih klasa, a poziv virtuelnih funkcija će se vršiti polimorfno u vreme izvršavanja.", "choices": [{"text": "Odgovor: Kolekcija se mora realizovati kao niz (ili kontejner) pokazivača ili referenci na osnovnu klasu. Na taj način, svaki element kolekcije može pokazivati na objekte različitih izvedenih klasa, a poziv virtuelnih funkcija će se vršiti polimorfno u vreme izvršavanja.", "correct": true}, {"text": "Mora se realizovati kao globalna funkcija (često kao friend klase Zakon ili Osoba) jer je levi operanad tipa int, a ne objekat klase.", "correct": false}, {"text": "Operator >> ima levu asocijativnost. To znači da se u izrazima sa više istih operatora operacije izvršavaju s leva na desno, što omogućava ulančavanje poput cin >> a >> b;. Left to right", "correct": false}, {"text": "Odgovor: Objektu osnovne klase se mogu dodeliti objekti izvedenih klasa (tzv. \"upcasting\"). Međutim, važno je napomenuti da će u tom slučaju doći do pojave poznate kao \"slicing\" (odsecanje), gde će se kopirati samo onaj deo izvedenog objekta koji pripada osnovnoj klasi.", "correct": false}]}, {"number": 64, "question": "Koji objekti se mogu dodeliti objektu osnovne klase?", "answer": "Odgovor: Objektu osnovne klase se mogu dodeliti objekti izvedenih klasa (tzv. \"upcasting\"). Međutim, važno je napomenuti da će u tom slučaju doći do pojave poznate kao \"slicing\" (odsecanje), gde će se kopirati samo onaj deo izvedenog objekta koji pripada osnovnoj klasi.", "choices": [{"text": "Funkcije se kao parametri sablona prenose preko pokazivaca na funkcije.", "correct": false}, {"text": "Iz funkcija ispred kojih stoji modifikator noexcept (ovo se nadam da je tacno, nema mi smisla da ista drugo bude) i iz destruktora (jer to dovodi do terminacije programa ako je već u toku obrada drugog izuzetka)..", "correct": false}, {"text": "Odgovor: Na nula načina. U C++ jeziku konstruktori ne mogu biti virtuelni. (Napomena: Ponekad se pod ovim terminom misli na \"virtual copy constructor\" koji se simulira metodom clone(), ali standardni virtuelni konstruktor ne postoji).", "correct": false}, {"text": "Odgovor: Objektu osnovne klase se mogu dodeliti objekti izvedenih klasa (tzv. \"upcasting\"). Međutim, važno je napomenuti da će u tom slučaju doći do pojave poznate kao \"slicing\" (odsecanje), gde će se kopirati samo onaj deo izvedenog objekta koji pripada osnovnoj klasi.", "correct": true}]}, {"number": 65, "question": "Poziv konstruktora i destruktora za statičke lokalne objekte.", "answer": "Odgovor: Konstruktori se pozivaju tacno jedanput kada se dodje do mesta gde je objekat definisan. Destruktor se poziva tek na kraju rada celog programa.", "choices": [{"text": "Odgovor: Konstruktori se pozivaju tacno jedanput kada se dodje do mesta gde je objekat definisan. Destruktor se poziva tek na kraju rada celog programa.", "correct": true}, {"text": "class A : private B {...} svi public i protected atributi i metode iz B su sada u A private, a private delovi klase B jesu nasledjeni, ali im se ne moze direktno pristupiti Klasa A se ne moze koristiti polimorfno kao B", "correct": false}, {"text": "Vrši se tzv. plitko kopiranje (shallow copy), gde se svaki podatak-član kopira bajt-po-bajt iz izvornog objekta u novi.", "correct": false}, {"text": "Odgovor: Destruktor se neće izvršiti ako se program nasilno prekine (npr. pozivom exit() ili abort()), ako objekat nije pravilno kreiran (izuzetak u konstruktoru), ili ako je objekat dinamički alociran (new), a nije eksplicitno obrisan (delete). ako imamo instancu objekta izvedene klase koji je dodeljen tipu osnovne...", "correct": false}]}, {"number": 66, "question": "Koliko će biti „ušteda“ u broju poziva inline rekurzivne funkcije FIB(int n) kojom se računa n-ti element Fibonačijevog niza ako je n=7?", "answer": "Odgovor: Ušteda će biti nula (0). Razlog je taj što kompajler ignoriše zahtev za inline kod rekurzivnih funkcija, jer ne može da izvrši beskonačno (ili neizvesno) razmotavanje koda u fazi kompilacije.", "choices": [{"text": "Operator \"spaceship\" (<=>), uveden u C++20 standardu, ima ne-asocijativno ponašanje (eng. non-associative). To znači da izrazi poput a <=> b <=> c nisu dozvoljeni i izazvaće grešku pri kompilaciji.", "correct": false}, {"text": "Odgovor: Ušteda će biti nula (0). Razlog je taj što kompajler ignoriše zahtev za inline kod rekurzivnih funkcija, jer ne može da izvrši beskonačno (ili neizvesno) razmotavanje koda u fazi kompilacije.", "correct": true}, {"text": "nije moguce, zato sto static funckija nema this", "correct": false}, {"text": "Odgovor: Konstruktori se pozivaju tacno jedanput kada se dodje do mesta gde je objekat definisan. Destruktor se poziva tek na kraju rada celog programa.", "correct": false}]}, {"number": 67, "question": "Kada se poziva konstruktor kopije?", "answer": "Odgovor: Poziva se u tri situacije: 1. Prilikom inicijalizacije novog objekta već postojećim objektom iste klase; 2. Prilikom prenošenja objekta u funkciju po vrednosti (kao argument); 3. Prilikom vraćanja objekta iz funkcije po vrednosti.", "choices": [{"text": "Odgovor: Poziva se u tri situacije: 1. Prilikom inicijalizacije novog objekta već postojećim objektom iste klase; 2. Prilikom prenošenja objekta u funkciju po vrednosti (kao argument); 3. Prilikom vraćanja objekta iz funkcije po vrednosti.", "correct": true}, {"text": "Nije simetrična (obostrana): Ako je A prijatelj klasi B, ne znači da je B prijatelj klasi A. Nije tranzitivna: Ako je A prijatelj od B, a B prijatelj od C, A nije automatski prijatelj klasi C. Nije nasledna: Prijatelj osnovne klase ne postaje automatski prijatelj njenih izvedenih klasa.", "correct": false}, {"text": "Moguća je samo potpuna (eksplicitna) specijalizacija. Delimična specijalizacija je rezervisana isključivo za klase.", "correct": false}, {"text": "Dinamičko povezivanje (eng. late binding) je mehanizam kojim se odluka o tome koja će se funkcija pozvati donosi u vreme izvršavanja (runtime), a ne u vreme kompilacije. Ovo se u C++ ostvaruje putem virtuelnih funkcija i pokazivača/referenci na osnovnu klasu. Dinamičko povezivanje (late binding) je mehanizam kod koga...", "correct": false}]}, {"number": 68, "question": "Koja su ograničenja u preklapanju operatora?", "answer": "Odgovor: Ne mogu se preklapati operatori: ., .*, ::, ?: i sizeof. Takođe, ne može se menjati prioritet, asocijativnost, arnost (broj operanada) niti se mogu definisati novi simboli operatora koji ne postoje u jeziku.", "choices": [{"text": "Odgovor: Ne mogu se preklapati operatori: ., .*, ::, ?: i sizeof. Takođe, ne može se menjati prioritet, asocijativnost, arnost (broj operanada) niti se mogu definisati novi simboli operatora koji ne postoje u jeziku.", "correct": true}, {"text": "Ovaj operator se obično definiše kao globalna funkcija, ali ako se posmatra kao članica klase istream, prototip izgleda ovako: istream& operator>>(Tip& obj);. Ili ovako - friend istream& operator>> (istream& i, MyClass& mc);", "correct": false}, {"text": "Odgovor: Elementima se pristupa prvenstveno preko iteratora, a kod nekih kontejnera (poput vector ili deque) i direktno preko operatora za indeksiranje [] ili metode .at().", "correct": false}, {"text": "Kod protected nasleđivanja: public članovi osnovne klase postaju protected u izvedenoj. protected članovi osnovne klase ostaju protected u izvedenoj. private članovi ostaju nedostupni. To znači da korisnici izvedene klase ne mogu videti te članove, ali klase koje se dalje izvode iz nje mogu.", "correct": false}]}, {"number": 69, "question": "Koji su uslovi za aktiviranje virtuelnog mehanizma?", "answer": "Funkcija mora biti deklarisana kao virtual u osnovnoj klasi, a poziv se mora obaviti preko pokazivača ili reference na osnovnu klasu koji u trenutku izvršavanja pokazuje na objekat izvedene klase.", "choices": [{"text": "difoltni konstruktor, destruktor, kopi konstruktor, operator=, friend metode i klase osnovne klase", "correct": false}, {"text": "Operator >> ima levu asocijativnost. To znači da se u izrazima sa više istih operatora operacije izvršavaju s leva na desno, što omogućava ulančavanje poput cin >> a >> b;. Left to right", "correct": false}, {"text": "Mora se realizovati kao globalna funkcija (često kao friend klase Zakon ili Osoba) jer je levi operanad tipa int, a ne objekat klase.", "correct": false}, {"text": "Funkcija mora biti deklarisana kao virtual u osnovnoj klasi, a poziv se mora obaviti preko pokazivača ili reference na osnovnu klasu koji u trenutku izvršavanja pokazuje na objekat izvedene klase.", "correct": true}]}, {"number": 70, "question": "Parametrizovani tipovi.", "answer": "Odgovor: Predstavljaju šablone (templates) koji omogućavaju pisanje generičkog koda. Oni dozvoljavaju da se isti algoritmi ili strukture podataka koriste sa različitim tipovima podataka, koji se specificiraju tek prilikom instanciranja (npr. vector<int> ili vector<double>).", "choices": [{"text": "Da, izuzeci se mogu koristiti u konstruktoru. Ako se desi izuzetak, objekat se smatra nedovršenim i proces njegovog kreiranja se prekida, zbog čega se neće pozvati destruktor za taj objekat.", "correct": false}, {"text": "Odgovor: Kolekcija se mora realizovati kao niz (ili kontejner) pokazivača ili referenci na osnovnu klasu. Na taj način, svaki element kolekcije može pokazivati na objekte različitih izvedenih klasa, a poziv virtuelnih funkcija će se vršiti polimorfno u vreme izvršavanja.", "correct": false}, {"text": "Odgovor: Predstavljaju šablone (templates) koji omogućavaju pisanje generičkog koda. Oni dozvoljavaju da se isti algoritmi ili strukture podataka koriste sa različitim tipovima podataka, koji se specificiraju tek prilikom instanciranja (npr. vector<int> ili vector<double>).", "correct": true}, {"text": "Odgovor: Nikako. Prijateljske funkcije nisu članice klase i stoga nemaju pokazivač this. One pristupaju privatnim članovima objekta direktno preko imena tog objekta koji im je prosleđen kao običan argument.", "correct": false}]}, {"number": 71, "question": "Gde je moguće izazvati izuzetak?", "answer": "Odgovor: Izuzetak se može izazvati u bilo kom delu koda (unutar funkcija, metoda, konstruktora) koristeći ključnu reč throw, ali se preporučuje da se to radi unutar try bloka kako bi postojao odgovarajući catch handler.", "choices": [{"text": "Odgovor: Izuzetak se može izazvati u bilo kom delu koda (unutar funkcija, metoda, konstruktora) koristeći ključnu reč throw, ali se preporučuje da se to radi unutar try bloka kako bi postojao odgovarajući catch handler.", "correct": true}, {"text": "Odgovor: Postoje tri specifikatora: public (pristup svima), protected (pristup unutar klase i izvedenim klasama) i private (pristup samo unutar same klase).", "correct": false}, {"text": "Odgovor: Funkcija write služi za neformatirani (binarni) upis niza bajtova u izlazni tok. Prima pokazivač na bafer i broj bajtova koje treba upisati.", "correct": false}, {"text": "U C++ standardu postoje tačno 8 standardnih tokova: cin, cout, cerr, clog (za char) wcin, wcout, wcerr, wclog (za wchar_t)", "correct": false}]}, {"number": 72, "question": "Na koliko načina je moguće kreirati ulazni tok vezan za neku datoteku?", "answer": "Odgovor: Na dva osnovna načina: 1. Korišćenjem konstruktora klase ifstream (npr. ifstream fajl(\"test.txt\");); 2. Korišćenjem podrazumevanog konstruktora i naknadnim pozivom metode open() (npr. fajl.open(\"test.txt\");).", "choices": [{"text": "Odgovor: Na dva osnovna načina: 1. Korišćenjem konstruktora klase ifstream (npr. ifstream fajl(\"test.txt\");); 2. Korišćenjem podrazumevanog konstruktora i naknadnim pozivom metode open() (npr. fajl.open(\"test.txt\");).", "correct": true}, {"text": "Redosled mora biti od najizvedenije ka osnovnoj klasi: A, pa B, pa C. (Ako bi stavio C prvu, ona bi \"uhvatila\" i A i B jer je ona njihova osnovna klasa).", "correct": false}, {"text": "Odgovor: Kod operatora koji menjaju levi operand (kao što su +=, -=, ++, --), povratna vrednost je obično referenca na levi operand (*this), kako bi se omogućilo ulančavanje operacija.", "correct": false}, {"text": "Odgovor: Elementima se pristupa prvenstveno preko iteratora, a kod nekih kontejnera (poput vector ili deque) i direktno preko operatora za indeksiranje [] ili metode .at().", "correct": false}]}, {"number": 73, "question": "Koji header file je potrebno uključiti da bi mogli da koristimo funkcija find nad objektom kontejnerske klase list?", "answer": "Odgovor: Potrebno je uključiti zaglavlje <algorithm> (gde se nalazi funkcija find) i zaglavlje <list> (za samu kontejnersku klasu).", "choices": [{"text": "Odgovor: Potrebno je uključiti zaglavlje <algorithm> (gde se nalazi funkcija find) i zaglavlje <list> (za samu kontejnersku klasu).", "correct": true}, {"text": "Odgovor: Moguće je imati samo jedan cin objekat (odnosno jedan wcin za široke karaktere) koji je povezan sa standardnim ulazom, jer je on globalni statički objekat definisan u standardnoj biblioteci.", "correct": false}, {"text": "Operator \"spaceship\" (<=>), uveden u C++20 standardu, ima ne-asocijativno ponašanje (eng. non-associative). To znači da izrazi poput a <=> b <=> c nisu dozvoljeni i izazvaće grešku pri kompilaciji.", "correct": false}, {"text": "Odgovor: Kod operatora koji menjaju levi operand (kao što su +=, -=, ++, --), povratna vrednost je obično referenca na levi operand (*this), kako bi se omogućilo ulančavanje operacija.", "correct": false}]}, {"number": 74, "question": "Kog tipa može biti povratna vrednost konstruktora?", "answer": "Odgovor: Konstruktori nemaju tip povratne vrednosti, čak ni void. Njihova jedina svrha je inicijalizacija objekta.", "choices": [{"text": "Odgovor: Konstruktori nemaju tip povratne vrednosti, čak ni void. Njihova jedina svrha je inicijalizacija objekta.", "correct": true}, {"text": "Kod protected nasleđivanja: public članovi osnovne klase postaju protected u izvedenoj. protected članovi osnovne klase ostaju protected u izvedenoj. private članovi ostaju nedostupni. To znači da korisnici izvedene klase ne mogu videti te članove, ali klase koje se dalje izvode iz nje mogu.", "correct": false}, {"text": "Operator >> ima levu asocijativnost. To znači da se u izrazima sa više istih operatora operacije izvršavaju s leva na desno, što omogućava ulančavanje poput cin >> a >> b;. Left to right", "correct": false}, {"text": "S obzirom na to da je cela Klasa prijatelj klase DrugaKlasa, njena metoda fun() ima pristup svim članovima (atributima i metodama) klase DrugaKlasa, bez obzira na njihov nivo pristupa: public, protected i private.", "correct": false}]}, {"number": 75, "question": "Kada se neće izvršiti destruktor jedne klase?", "answer": "Odgovor: Destruktor se neće izvršiti ako se program nasilno prekine (npr. pozivom exit() ili abort()), ako objekat nije pravilno kreiran (izuzetak u konstruktoru), ili ako je objekat dinamički alociran (new), a nije eksplicitno obrisan (delete).\nako imamo instancu objekta izvedene klase koji je dodeljen tipu osnovne klase, a destruktor osnovne klase nije virtuelan nece se pozvati destruktor izvedene klase vec samo osnovne.", "choices": [{"text": "Odgovor: Destruktor se neće izvršiti ako se program nasilno prekine (npr. pozivom exit() ili abort()), ako objekat nije pravilno kreiran (izuzetak u konstruktoru), ili ako je objekat dinamički alociran (new), a nije eksplicitno obrisan (delete). ako imamo instancu objekta izvedene klase koji je dodeljen tipu osnovne...", "correct": true}, {"text": "Odgovor: Konstruktori globalnih objekata se pozivaju pre ulaska u main() funkciju, a njihovi destruktori se pozivaju nakon završetka main() funkcije, u obrnutom redosledu od redosleda kreiranja.", "correct": false}, {"text": "Mora se realizovati kao globalna funkcija (često kao friend klase Zakon ili Osoba) jer je levi operanad tipa int, a ne objekat klase.", "correct": false}, {"text": "Da bi se desio polimorfizam (dinamičko vezivanje), moraju biti ispunjena dva uslova: Funkcija u osnovnoj klasi mora biti deklarisana kao virtual. Poziv funkcije mora se vršiti preko pokazivača ili reference na osnovnu klasu koji pokazuje na objekat izvedene klase.", "correct": false}]}, {"number": 76, "question": "Kako se definiše izvedena klasa?", "answer": "Odgovor: Definiše se navođenjem ključne reči class, imena izvedene klase, dvotačke (:), opcionog specifikatora pristupa (public, protected, private) i imena osnovne klase.", "choices": [{"text": "Mora se realizovati kao globalna funkcija (često kao friend klase Zakon ili Osoba) jer je levi operanad tipa int, a ne objekat klase.", "correct": false}, {"text": "Odgovor: Definiše se navođenjem ključne reči class, imena izvedene klase, dvotačke (:), opcionog specifikatora pristupa (public, protected, private) i imena osnovne klase.", "correct": true}, {"text": "Odgovor: Funkcija se generiše (instancira) na dva načina: Implicitno: Kada kompajler sam zaključi (dedukuje) tipove na osnovu argumenata poziva. Eksplicitno: Kada programer navede tipove u šiljastim zagradama (npr. poziv<int>(...)).", "correct": false}, {"text": "Da, operator dodele (operator=) može biti deklarisan kao virtuelan, ali se to u praksi smatra lošom programerskom praksom i retko se koristi. Da, operator= može biti virtuelan, ali se to u praksi izbegava. Glavni razlog je taj što virtuelne funkcije zahtevaju da i u osnovnoj i u izvedenoj klasi imaju iste tipove...", "correct": false}]}, {"number": 77, "question": "Koji uslov je potrebno zadovoljiti da bi se funkcija generisala iz šablona?", "answer": "Odgovor: Poziv funkcije mora biti takav da kompajler može nedvosmisleno odrediti (dedukovati) tipove parametara šablona na osnovu argumenata, ili se tipovi moraju navesti eksplicitno (npr. fun<int>()).", "choices": [{"text": "Operator noexcept(izraz) proverava u fazi prevođenja da li izraz može da generiše izuzetak. Izraz se ne izvršava, a rezultat je logička vrednost (true ako izraz ne baca izuzetak).", "correct": false}, {"text": "Operator \"spaceship\" (<=>), uveden u C++20 standardu, ima ne-asocijativno ponašanje (eng. non-associative). To znači da izrazi poput a <=> b <=> c nisu dozvoljeni i izazvaće grešku pri kompilaciji.", "correct": false}, {"text": "Odgovor: Poziv funkcije mora biti takav da kompajler može nedvosmisleno odrediti (dedukovati) tipove parametara šablona na osnovu argumenata, ili se tipovi moraju navesti eksplicitno (npr. fun<int>()).", "correct": true}, {"text": "Odgovor: To je operator razrešavanja opsega (scope resolution operator). Koristi se za pristup statičkim članovima klase, definisanje metoda van klase, ili za pristup globalnim imenima koja su sakrivena lokalnim.", "correct": false}]}, {"number": 78, "question": "Koja je namena klase ostrstream?", "answer": "Odgovor: Namena klase ostrstream je izlazni tok podataka ka nizu karaktera u memoriji (C-string).", "choices": [{"text": "Dinamičko povezivanje (eng. late binding) je mehanizam kojim se odluka o tome koja će se funkcija pozvati donosi u vreme izvršavanja (runtime), a ne u vreme kompilacije. Ovo se u C++ ostvaruje putem virtuelnih funkcija i pokazivača/referenci na osnovnu klasu. Dinamičko povezivanje (late binding) je mehanizam kod koga...", "correct": false}, {"text": "Odgovor: Redosled je obrnut u odnosu na konstruktore: Prvo se izvršava telo destruktora izvedene klase. Zatim se pozivaju destruktori članova (podobjekata) izvedene klase. Na kraju se pozivaju destruktori osnovnih klasa", "correct": false}, {"text": "Odgovor: Namena klase ostrstream je izlazni tok podataka ka nizu karaktera u memoriji (C-string).", "correct": true}, {"text": "kao prefiksa i postfiksna funckija Kao postfiksna vraca objekat, pravi kopiju objekta i vraca staru vrednost, ima parametar int koji sluzi kao pomoc kompajleru T operator++(int); Kao prefiksna vraca referencu na objekat, menja objekat i vraca novu izmenjenu vrednost T& operator++();", "correct": false}]}, {"number": 79, "question": "Objasniti virtuelno izvođenje.", "answer": "Odgovor: Virtuelno izvođenje se koristi kod višestrukog nasleđivanja kako bi se sprečilo dupliranje članova zajedničke indirektne osnovne klase (tzv. \"dijamantski problem\"). Deklaracijom virtual prilikom nasleđivanja, izvedena klasa dobija samo jedan podobjekat te osnovne klase.", "choices": [{"text": "Odgovor: Virtuelno izvođenje se koristi kod višestrukog nasleđivanja kako bi se sprečilo dupliranje članova zajedničke indirektne osnovne klase (tzv. \"dijamantski problem\"). Deklaracijom virtual prilikom nasleđivanja, izvedena klasa dobija samo jedan podobjekat te osnovne klase.", "correct": true}, {"text": "Ako funkcija deklarisana sa noexcept pokuša da izbaci izuzetak koji se ne obradi unutar nje, program odmah poziva funkciju std::terminate() koja nasilno prekida izvršavanje programa.", "correct": false}, {"text": "Odgovor: Potrebno je uključiti zaglavlje <algorithm> (gde se nalazi funkcija find) i zaglavlje <list> (za samu kontejnersku klasu).", "correct": false}, {"text": "Da bi se desio polimorfizam (dinamičko vezivanje), moraju biti ispunjena dva uslova: Funkcija u osnovnoj klasi mora biti deklarisana kao virtual. Poziv funkcije mora se vršiti preko pokazivača ili reference na osnovnu klasu koji pokazuje na objekat izvedene klase.", "correct": false}]}, {"number": 80, "question": "Opisati delovanje funkcija write u radu sa izlaznim tokovima.", "answer": "Odgovor: Funkcija write služi za neformatirani (binarni) upis niza bajtova u izlazni tok. Prima pokazivač na bafer i broj bajtova koje treba upisati.", "choices": [{"text": "Odgovor: To je operator razrešavanja opsega (scope resolution operator). Koristi se za pristup statičkim članovima klase, definisanje metoda van klase, ili za pristup globalnim imenima koja su sakrivena lokalnim.", "correct": false}, {"text": "kao prefiksa i postfiksna funckija Kao postfiksna vraca objekat, pravi kopiju objekta i vraca staru vrednost, ima parametar int koji sluzi kao pomoc kompajleru T operator++(int); Kao prefiksna vraca referencu na objekat, menja objekat i vraca novu izmenjenu vrednost T& operator++();", "correct": false}, {"text": "Odgovor: Funkcija write služi za neformatirani (binarni) upis niza bajtova u izlazni tok. Prima pokazivač na bafer i broj bajtova koje treba upisati.", "correct": true}, {"text": "Odgovor: Poziva se u tri situacije: 1. Prilikom inicijalizacije novog objekta već postojećim objektom iste klase; 2. Prilikom prenošenja objekta u funkciju po vrednosti (kao argument); 3. Prilikom vraćanja objekta iz funkcije po vrednosti.", "correct": false}]}, {"number": 81, "question": "Šta je povratna vrednost operatora koji menja levi operand?", "answer": "Odgovor: Kod operatora koji menjaju levi operand (kao što su +=, -=, ++, --), povratna vrednost je obično referenca na levi operand (*this), kako bi se omogućilo ulančavanje operacija.", "choices": [{"text": "Moguća je samo potpuna (eksplicitna) specijalizacija. Delimična specijalizacija je rezervisana isključivo za klase.", "correct": false}, {"text": "Odgovor: Kod operatora koji menjaju levi operand (kao što su +=, -=, ++, --), povratna vrednost je obično referenca na levi operand (*this), kako bi se omogućilo ulančavanje operacija.", "correct": true}, {"text": "Odgovor: Namena ove funkcije je da pročita jedan karakter iz ulaznog toka i smesti ga u referencu znak. Za razliku od operatora >>, ova funkcija ne preskače praznine (space, tab, enter).", "correct": false}, {"text": "Odgovor: Izuzetak se može izazvati u bilo kom delu koda (unutar funkcija, metoda, konstruktora) koristeći ključnu reč throw, ali se preporučuje da se to radi unutar try bloka kako bi postojao odgovarajući catch handler.", "correct": false}]}, {"number": 82, "question": "Koji je redosled poziva destruktora prilikom uništavanja objekta izvedene klase?", "answer": "Odgovor: Redosled je obrnut u odnosu na konstruktore:\nPrvo se izvršava telo destruktora izvedene klase.\nZatim se pozivaju destruktori članova (podobjekata) izvedene klase.\nNa kraju se pozivaju destruktori osnovnih klasa", "choices": [{"text": "Odgovor: U jednom fajlu može biti definisan samo jedan neimenovani (anonimni) namespace. Svi delovi koda koji se nalaze u anonimnim prostorima imena unutar istog fajla tretiraju se kao da pripadaju tom jednom jedinstvenom prostoru", "correct": false}, {"text": "Odgovor: Virtuelno izvođenje se koristi kod višestrukog nasleđivanja kako bi se sprečilo dupliranje članova zajedničke indirektne osnovne klase (tzv. \"dijamantski problem\"). Deklaracijom virtual prilikom nasleđivanja, izvedena klasa dobija samo jedan podobjekat te osnovne klase.", "correct": false}, {"text": "Odgovor: Redosled je obrnut u odnosu na konstruktore: Prvo se izvršava telo destruktora izvedene klase. Zatim se pozivaju destruktori članova (podobjekata) izvedene klase. Na kraju se pozivaju destruktori osnovnih klasa", "correct": true}, {"text": "Odgovor: Destruktor se neće izvršiti ako se program nasilno prekine (npr. pozivom exit() ili abort()), ako objekat nije pravilno kreiran (izuzetak u konstruktoru), ili ako je objekat dinamički alociran (new), a nije eksplicitno obrisan (delete). ako imamo instancu objekta izvedene klase koji je dodeljen tipu osnovne...", "correct": false}]}, {"number": 83, "question": "Načini za generisanje funkcija iz šablonskih funkcija.", "answer": "Odgovor: Funkcija se generiše (instancira) na dva načina:\nImplicitno: Kada kompajler sam zaključi (dedukuje) tipove na osnovu argumenata poziva.\nEksplicitno: Kada programer navede tipove u šiljastim zagradama (npr. poziv<int>(...)).", "choices": [{"text": "Da, izuzeci se mogu koristiti u konstruktoru. Ako se desi izuzetak, objekat se smatra nedovršenim i proces njegovog kreiranja se prekida, zbog čega se neće pozvati destruktor za taj objekat.", "correct": false}, {"text": "Odgovor: Može sadržati proizvoljan broj blanko znakova pre samog podatka, jer ih operator >> po podrazumevanom podešavanju preskače (ignoriše) dok ne naiđe na prvi ne-prazan karakter.", "correct": false}, {"text": "Odgovor: Funkcija se generiše (instancira) na dva načina: Implicitno: Kada kompajler sam zaključi (dedukuje) tipove na osnovu argumenata poziva. Eksplicitno: Kada programer navede tipove u šiljastim zagradama (npr. poziv<int>(...)).", "correct": true}, {"text": "Maksimalan broj standardnih tokova je fiksiran na 8 prema samoj specifikaciji C++ standarda. Taj broj zavisi od postojanja četiri namenska toka (in, out, err, log) koji su duplirani kako bi podržali dva tipa karaktera (obične char i široke wchar_t).", "correct": false}]}, {"number": 84, "question": "Koje je značenje vrednosti ios::trunc parametra dosmode?", "answer": "Odgovor: Parametar ios::trunc (skraćeno od truncate) označava da će se, prilikom otvaranja datoteke, njen prethodni sadržaj obrisati (odseći), tako da datoteka počinje od nule.", "choices": [{"text": "Ne mora nuzno da postoji drugi paramtar u kopi konstrukru, ali ako postoji onda je to neki parametar koji ima podrazumevanu vrednost", "correct": false}, {"text": "Odgovor: Funkcija se generiše (instancira) na dva načina: Implicitno: Kada kompajler sam zaključi (dedukuje) tipove na osnovu argumenata poziva. Eksplicitno: Kada programer navede tipove u šiljastim zagradama (npr. poziv<int>(...)).", "correct": false}, {"text": "Odgovor: Parametar ios::trunc (skraćeno od truncate) označava da će se, prilikom otvaranja datoteke, njen prethodni sadržaj obrisati (odseći), tako da datoteka počinje od nule.", "correct": true}, {"text": "U C++ standardu postoje tačno 8 standardnih tokova: cin, cout, cerr, clog (za char) wcin, wcout, wcerr, wclog (za wchar_t)", "correct": false}]}, {"number": 85, "question": "Kako se navodi spisak tipova izuzetaka koje funkcija izaziva?", "answer": "Navodi se pomocu naredbe throw(niz_identifikatora) iza liste argumenata.", "choices": [{"text": "Odgovor: Izuzetak se može izazvati u bilo kom delu koda (unutar funkcija, metoda, konstruktora) koristeći ključnu reč throw, ali se preporučuje da se to radi unutar try bloka kako bi postojao odgovarajući catch handler.", "correct": false}, {"text": "Odgovor: Ne mogu se preklapati operatori: ., .*, ::, ?: i sizeof. Takođe, ne može se menjati prioritet, asocijativnost, arnost (broj operanada) niti se mogu definisati novi simboli operatora koji ne postoje u jeziku.", "correct": false}, {"text": "Navodi se pomocu naredbe throw(niz_identifikatora) iza liste argumenata.", "correct": true}, {"text": "Odgovor: Kompajler ne vrši klasičan poziv funkcije preko steka, već umeće (kopira) telo funkcije direktno na mesto gde je ona pozvana u kodu kako bi se ubrzalo izvršavanje.", "correct": false}]}, {"number": 86, "question": "Pomoću kojih operatora se može pristupiti objektima Apstraktnih klasa?", "answer": "Apstraktna klasa ne moze imati objekte.", "choices": [{"text": "Operator \"spaceship\" (<=>), uveden u C++20 standardu, ima ne-asocijativno ponašanje (eng. non-associative). To znači da izrazi poput a <=> b <=> c nisu dozvoljeni i izazvaće grešku pri kompilaciji.", "correct": false}, {"text": "Odgovor: Elementima se pristupa prvenstveno preko iteratora, a kod nekih kontejnera (poput vector ili deque) i direktno preko operatora za indeksiranje [] ili metode .at().", "correct": false}, {"text": "Apstraktna klasa ne moze imati objekte.", "correct": true}, {"text": "Odgovor: Parametar ios::trunc (skraćeno od truncate) označava da će se, prilikom otvaranja datoteke, njen prethodni sadržaj obrisati (odseći), tako da datoteka počinje od nule.", "correct": false}]}, {"number": 87, "question": "Od čega zavisi koliko se maksimalno može kreirati standardnih tokova?", "answer": "Maksimalan broj standardnih tokova je fiksiran na 8 prema samoj specifikaciji C++ standarda. Taj broj zavisi od postojanja četiri namenska toka (in, out, err, log) koji su duplirani kako bi podržali dva tipa karaktera (obične char i široke wchar_t).", "choices": [{"text": "Maksimalan broj standardnih tokova je fiksiran na 8 prema samoj specifikaciji C++ standarda. Taj broj zavisi od postojanja četiri namenska toka (in, out, err, log) koji su duplirani kako bi podržali dva tipa karaktera (obične char i široke wchar_t).", "correct": true}, {"text": "Navodi se pomocu naredbe throw(niz_identifikatora) iza liste argumenata.", "correct": false}, {"text": "Postdekrement treba da sacuva kopiju svog operanda, izmeni operand i zatim vrati kopiju. (treba da vrati const!! nzm jel ce da skine poene ako mu se to ne napise). Postdekrement operator vraća kopiju objekta pre umanjenja. Povratna vrednost je objekat vraćen po vrednosti (const T).", "correct": false}, {"text": "Clanovima klase se pristupa pomocu 2 operatora : Operator . za objekte i reference objekta, operator -> za pokazivace.", "correct": false}]}, {"number": 88, "question": "Na koliko načina može da se definiše virtuelni konstruktor?", "answer": "Odgovor: Na nula načina. U C++ jeziku konstruktori ne mogu biti virtuelni. (Napomena: Ponekad se pod ovim terminom misli na \"virtual copy constructor\" koji se simulira metodom clone(), ali standardni virtuelni konstruktor ne postoji).", "choices": [{"text": "Odgovor: Na nula načina. U C++ jeziku konstruktori ne mogu biti virtuelni. (Napomena: Ponekad se pod ovim terminom misli na \"virtual copy constructor\" koji se simulira metodom clone(), ali standardni virtuelni konstruktor ne postoji).", "correct": true}, {"text": "Referenca na objekat osnovne klase se moze samo eksplicitno konvertovati u referencu na objekat javno izvedene klase i to samo ako zaista ukazuje na objekat javno izvedene klase.", "correct": false}, {"text": "nije moguce, zato sto static funckija nema this", "correct": false}, {"text": "Koristi se kod virtuelnih funkcija kada se saopstava da je to konacna verzija te funckije i da se ona ne moze redefinisati dalje i kod klasa sa se zabrani dalje nasledjivanje.", "correct": false}]}, {"number": 89, "question": "Specifikatori prava pristupa članovima klase.", "answer": "Odgovor: Postoje tri specifikatora: public (pristup svima), protected (pristup unutar klase i izvedenim klasama) i private (pristup samo unutar same klase).", "choices": [{"text": "Odgovor: Postoje tri specifikatora: public (pristup svima), protected (pristup unutar klase i izvedenim klasama) i private (pristup samo unutar same klase).", "correct": true}, {"text": "U C++ jeziku statičke članice ne mogu biti virtuelne. Ključne reči static i virtual su međusobno isključive za istu funkciju.", "correct": false}, {"text": "Odgovor: Na nula načina. U C++ jeziku konstruktori ne mogu biti virtuelni. (Napomena: Ponekad se pod ovim terminom misli na \"virtual copy constructor\" koji se simulira metodom clone(), ali standardni virtuelni konstruktor ne postoji).", "correct": false}, {"text": "Student(Student&& s) noexcept;", "correct": false}]}, {"number": 90, "question": "Kako kompajler poziva inline funkcije?", "answer": "Odgovor: Kompajler ne vrši klasičan poziv funkcije preko steka, već umeće (kopira) telo funkcije direktno na mesto gde je ona pozvana u kodu kako bi se ubrzalo izvršavanje.", "choices": [{"text": "Odgovor: Redosled faza je: Pretprocesiranje (obrada direktiva poput #include), Kompilacija (prevođenje u izvorni mašinski kod), Asembliranje (kreiranje objektnih fajlova) i Linkovanje (povezivanje objektnih fajlova i biblioteka u izvršni program).", "correct": false}, {"text": "Odgovor: Kompajler ne vrši klasičan poziv funkcije preko steka, već umeće (kopira) telo funkcije direktno na mesto gde je ona pozvana u kodu kako bi se ubrzalo izvršavanje.", "correct": true}, {"text": "Odgovor: Za operatore kao što su +=, -=, *=, /= važi desna asocijativnost (izračunavaju se zdesna nalevo).", "correct": false}, {"text": "Izuzeci se mogu izazvati (koristeći throw) iz bilo koje funkcije, uključujući obične funkcije, metode klasa, konstruktore, pa čak i operatore. Ipak, izbegava se bacanje izuzetaka iz destruktora jer to može dovesti do nasilnog prekida programa (std::terminate) tokom \"unwinding-a\" steka.", "correct": false}]}, {"number": 91, "question": "Poziv konstruktora i destruktora globalnih objekata.", "answer": "Odgovor: Konstruktori globalnih objekata se pozivaju pre ulaska u main() funkciju, a njihovi destruktori se pozivaju nakon završetka main() funkcije, u obrnutom redosledu od redosleda kreiranja.", "choices": [{"text": "Odgovor: Konstruktori globalnih objekata se pozivaju pre ulaska u main() funkciju, a njihovi destruktori se pozivaju nakon završetka main() funkcije, u obrnutom redosledu od redosleda kreiranja.", "correct": true}, {"text": "Odgovor: Potrebno je uključiti zaglavlje <algorithm> (gde se nalazi funkcija find) i zaglavlje <list> (za samu kontejnersku klasu).", "correct": false}, {"text": "Potrebno je koristiti virtuelno nasleđivanje (ključna reč virtual) prilikom izvođenja srednjih klasa iz te osnovne.", "correct": false}, {"text": "Referenca na objekat osnovne klase se moze samo eksplicitno konvertovati u referencu na objekat javno izvedene klase i to samo ako zaista ukazuje na objekat javno izvedene klase.", "correct": false}]}, {"number": 92, "question": "Koji proces je suprotan procesu specijalizacije?", "answer": "Odgovor: Suprotan proces je generalizacija. U kontekstu klasa, to znači izvlačenje zajedničkih osobina više klasa u jednu opštu osnovnu klasu.", "choices": [{"text": "postrebno je <algorithm> i <vector>", "correct": false}, {"text": "Odgovor: Suprotan proces je generalizacija. U kontekstu klasa, to znači izvlačenje zajedničkih osobina više klasa u jednu opštu osnovnu klasu.", "correct": true}, {"text": "Odgovor: Elementima se pristupa prvenstveno preko iteratora, a kod nekih kontejnera (poput vector ili deque) i direktno preko operatora za indeksiranje [] ili metode .at().", "correct": false}, {"text": "ne mogu da se redefinisu ., .*, ::, ?, sizeof ne mogu da se redefinisu znacenja operatora za standardne tipove podataka(npr + ce uvek da sabira dva int broja) ne mogu novi simboli koji nisu operatori da budu operatori(npr ne moze operatorm ili tako neka glupost) ne menjaju se osobine kao sto su prioritet i...", "correct": false}]}, {"number": 93, "question": "Koliko maksimalno blanko znakova može sadržati ulazni podatak ako se za ulaz koristi operator >>?", "answer": "Odgovor: Može sadržati proizvoljan broj blanko znakova pre samog podatka, jer ih operator >> po podrazumevanom podešavanju preskače (ignoriše) dok ne naiđe na prvi ne-prazan karakter.", "choices": [{"text": "Odgovor: Može sadržati proizvoljan broj blanko znakova pre samog podatka, jer ih operator >> po podrazumevanom podešavanju preskače (ignoriše) dok ne naiđe na prvi ne-prazan karakter.", "correct": true}, {"text": "Odgovor: Funkcija write služi za neformatirani (binarni) upis niza bajtova u izlazni tok. Prima pokazivač na bafer i broj bajtova koje treba upisati.", "correct": false}, {"text": "Za korisničke tipove (klase/strukture) C++ automatski definiše: Operator dodele (operator=). Adresni operator (operator&). Operator pristupa članu (operator.). Operator za zarez (operator,).", "correct": false}, {"text": "Nema odgovora u dokumentu.", "correct": false}]}, {"number": 94, "question": "Kako se pristupa elementima kontejnerskih klasa definisanih u std?", "answer": "Odgovor: Elementima se pristupa prvenstveno preko iteratora, a kod nekih kontejnera (poput vector ili deque) i direktno preko operatora za indeksiranje [] ili metode .at().", "choices": [{"text": "Operator noexcept(izraz) proverava u fazi prevođenja da li izraz može da generiše izuzetak. Izraz se ne izvršava, a rezultat je logička vrednost (true ako izraz ne baca izuzetak).", "correct": false}, {"text": "Odgovor: Elementima se pristupa prvenstveno preko iteratora, a kod nekih kontejnera (poput vector ili deque) i direktno preko operatora za indeksiranje [] ili metode .at().", "correct": true}, {"text": "Odgovor: Moguće je imati samo jedan cin objekat (odnosno jedan wcin za široke karaktere) koji je povezan sa standardnim ulazom, jer je on globalni statički objekat definisan u standardnoj biblioteci.", "correct": false}, {"text": "Odgovor: Na nula načina. U C++ jeziku konstruktori ne mogu biti virtuelni. (Napomena: Ponekad se pod ovim terminom misli na \"virtual copy constructor\" koji se simulira metodom clone(), ali standardni virtuelni konstruktor ne postoji).", "correct": false}]}, {"number": 95, "question": "Koja je namena operatora ::?", "answer": "Odgovor: To je operator razrešavanja opsega (scope resolution operator). Koristi se za pristup statičkim članovima klase, definisanje metoda van klase, ili za pristup globalnim imenima koja su sakrivena lokalnim.", "choices": [{"text": "Funkcija mora biti deklarisana kao virtual u osnovnoj klasi, a poziv se mora obaviti preko pokazivača ili reference na osnovnu klasu koji u trenutku izvršavanja pokazuje na objekat izvedene klase.", "correct": false}, {"text": "Ovaj operator se obično definiše kao globalna funkcija, ali ako se posmatra kao članica klase istream, prototip izgleda ovako: istream& operator>>(Tip& obj);. Ili ovako - friend istream& operator>> (istream& i, MyClass& mc);", "correct": false}, {"text": "Odgovor: To je operator razrešavanja opsega (scope resolution operator). Koristi se za pristup statičkim članovima klase, definisanje metoda van klase, ili za pristup globalnim imenima koja su sakrivena lokalnim.", "correct": true}, {"text": "Odgovor: Funkcija write služi za neformatirani (binarni) upis niza bajtova u izlazni tok. Prima pokazivač na bafer i broj bajtova koje treba upisati.", "correct": false}]}, {"number": 96, "question": "Kako prijateljska funkcija pristupa objektu klase kojoj je prijatelj pomoću pokazivača this?", "answer": "Odgovor: Nikako. Prijateljske funkcije nisu članice klase i stoga nemaju pokazivač this. One pristupaju privatnim članovima objekta direktno preko imena tog objekta koji im je prosleđen kao običan argument.", "choices": [{"text": "Odgovor: Šabloni klasa se po pravilu deklarišu na nivou imenskog prostora (globalno), jer C++ ne dozvoljava definisanje šablona unutar funkcija (lokalno).", "correct": false}, {"text": "kao prefiksa i postfiksna funckija Kao postfiksna vraca objekat, pravi kopiju objekta i vraca staru vrednost, ima parametar int koji sluzi kao pomoc kompajleru T operator++(int); Kao prefiksna vraca referencu na objekat, menja objekat i vraca novu izmenjenu vrednost T& operator++();", "correct": false}, {"text": "Odgovor: Nikako. Prijateljske funkcije nisu članice klase i stoga nemaju pokazivač this. One pristupaju privatnim članovima objekta direktno preko imena tog objekta koji im je prosleđen kao običan argument.", "correct": true}, {"text": "Odgovor: Na nula načina. U C++ jeziku konstruktori ne mogu biti virtuelni. (Napomena: Ponekad se pod ovim terminom misli na \"virtual copy constructor\" koji se simulira metodom clone(), ali standardni virtuelni konstruktor ne postoji).", "correct": false}]}, {"number": 97, "question": "Faze u razvoju C++ programa (navesti po redosledu).", "answer": "Odgovor: Redosled faza je: Pretprocesiranje (obrada direktiva poput #include), Kompilacija (prevođenje u izvorni mašinski kod), Asembliranje (kreiranje objektnih fajlova) i Linkovanje (povezivanje objektnih fajlova i biblioteka u izvršni program).", "choices": [{"text": "Odgovor: Redosled faza je: Pretprocesiranje (obrada direktiva poput #include), Kompilacija (prevođenje u izvorni mašinski kod), Asembliranje (kreiranje objektnih fajlova) i Linkovanje (povezivanje objektnih fajlova i biblioteka u izvršni program).", "correct": true}, {"text": "Apstraktna klasa ne moze imati objekte.", "correct": false}, {"text": "Odgovor: Za operator >>= (operator dodele sa pomeranjem udesno) važi desna asocijativnost. To znači da se u izrazima gde se ovaj operator pojavljuje više puta, operacije izvršavaju s desna na levo. Na primer, izraz a >>= b >>= c se interpretira kao da su dodate zagrade na sledeći način: a >>= (b >>= c). s desna na levo", "correct": false}, {"text": "Da, izuzeci se mogu koristiti u konstruktoru. Ako se desi izuzetak, objekat se smatra nedovršenim i proces njegovog kreiranja se prekida, zbog čega se neće pozvati destruktor za taj objekat.", "correct": false}]}, {"number": 98, "question": "Koliko maksimalno neimenovanih namespace može biti definisano u jednom fajlu?", "answer": "Odgovor: U jednom fajlu može biti definisan samo jedan neimenovani (anonimni) namespace. Svi delovi koda koji se nalaze u anonimnim prostorima imena unutar istog fajla tretiraju se kao da pripadaju tom jednom jedinstvenom prostoru", "choices": [{"text": "Odgovor: Izraz predstavlja adresu petog elementa niza A (indeks A[4]). Budući da se na početnu adresu dodaje veličina četiri elementa, pokazivač se pomera na početak petog elementa u memoriji.", "correct": false}, {"text": "Odgovor: Šabloni klasa se po pravilu deklarišu na nivou imenskog prostora (globalno), jer C++ ne dozvoljava definisanje šablona unutar funkcija (lokalno).", "correct": false}, {"text": "Odgovor: U jednom fajlu može biti definisan samo jedan neimenovani (anonimni) namespace. Svi delovi koda koji se nalaze u anonimnim prostorima imena unutar istog fajla tretiraju se kao da pripadaju tom jednom jedinstvenom prostoru", "correct": true}, {"text": "Odgovor: Nikako. Prijateljske funkcije nisu članice klase i stoga nemaju pokazivač this. One pristupaju privatnim članovima objekta direktno preko imena tog objekta koji im je prosleđen kao običan argument.", "correct": false}]}, {"number": 99, "question": "Koliko maksimalno cin objekata je moguće kreirati u main() funkciji?", "answer": "Odgovor: Moguće je imati samo jedan cin objekat (odnosno jedan wcin za široke karaktere) koji je povezan sa standardnim ulazom, jer je on globalni statički objekat definisan u standardnoj biblioteci.", "choices": [{"text": "Iteratori su klase ciji objekti predstavljaju pozicije elemenata u razlicitim kontejnerskim klasama. Iteratori se uvek pridruzuju nekoj kontejnerskoj klasi.", "correct": false}, {"text": "Odgovor: Moguće je imati samo jedan cin objekat (odnosno jedan wcin za široke karaktere) koji je povezan sa standardnim ulazom, jer je on globalni statički objekat definisan u standardnoj biblioteci.", "correct": true}, {"text": "Postdekrement treba da sacuva kopiju svog operanda, izmeni operand i zatim vrati kopiju. (treba da vrati const!! nzm jel ce da skine poene ako mu se to ne napise). Postdekrement operator vraća kopiju objekta pre umanjenja. Povratna vrednost je objekat vraćen po vrednosti (const T).", "correct": false}, {"text": "Služi za pomeranje ulaznog pokazivača (eng. get pointer) unutar ulaznog toka podataka (fajla) na određenu poziciju.", "correct": false}]}, {"number": 100, "question": "Kako se vrši lokalna deklaracija šablonske klase?", "answer": "Odgovor: Šabloni klasa se po pravilu deklarišu na nivou imenskog prostora (globalno), jer C++ ne dozvoljava definisanje šablona unutar funkcija (lokalno).", "choices": [{"text": "Odgovor: Šabloni klasa se po pravilu deklarišu na nivou imenskog prostora (globalno), jer C++ ne dozvoljava definisanje šablona unutar funkcija (lokalno).", "correct": true}, {"text": "nije moguce, zato sto static funckija nema this", "correct": false}, {"text": "Odgovor: Redosled faza je: Pretprocesiranje (obrada direktiva poput #include), Kompilacija (prevođenje u izvorni mašinski kod), Asembliranje (kreiranje objektnih fajlova) i Linkovanje (povezivanje objektnih fajlova i biblioteka u izvršni program).", "correct": false}, {"text": "Odgovor: Ne mogu se preklapati operatori: ., .*, ::, ?: i sizeof. Takođe, ne može se menjati prioritet, asocijativnost, arnost (broj operanada) niti se mogu definisati novi simboli operatora koji ne postoje u jeziku.", "correct": false}]}];
+    const STORAGE_KEY = 'op-usmeni-quiz-progress-v1';
+
+    const state = {
+      mode: 'study',
+      order: QUESTIONS.map((_, index) => index),
+      currentPosition: 0,
+      revealed: false,
+      selectedChoice: null,
+      checked: false,
+      query: '',
+      progress: loadProgress()
+    };
+
+    const panel = document.getElementById('panel');
+    const numberGrid = document.getElementById('numberGrid');
+    const search = document.getElementById('search');
+    const totalStat = document.getElementById('totalStat');
+    const knownStat = document.getElementById('knownStat');
+    const reviewStat = document.getElementById('reviewStat');
+    const leftStat = document.getElementById('leftStat');
+
+    function loadProgress() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+      } catch {
+        return {};
+      }
+    }
+
+    function saveProgress() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state.progress));
+    }
+
+    function escapeText(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#039;');
+    }
+
+    function currentIndex() {
+      return state.order[state.currentPosition] ?? 0;
+    }
+
+    function currentQuestion() {
+      return QUESTIONS[currentIndex()];
+    }
+
+    function resetInteraction() {
+      state.revealed = false;
+      state.selectedChoice = null;
+      state.checked = false;
+    }
+
+    function optionLetter(index) {
+      return String.fromCharCode(65 + index);
+    }
+
+    function renderChoices(item) {
+      return `<div class="choice-list">${item.choices.map((choice, index) => {
+        const selected = state.selectedChoice === index;
+        const correct = choice.correct;
+        const classes = ['choice'];
+        if (selected) classes.push('selected');
+        if (state.checked && correct) classes.push('correct');
+        if (state.checked && selected && !correct) classes.push('wrong');
+        return `<button class="${classes.join(' ')}" type="button" data-choice="${index}" ${state.checked ? 'disabled' : ''}>
+          <span class="choice-label">${optionLetter(index)}</span>${escapeText(choice.text)}
+        </button>`;
+      }).join('')}</div>`;
+    }
+
+    function renderFeedback(item) {
+      if (!state.checked) return '';
+      const selected = item.choices[state.selectedChoice];
+      const correct = selected && selected.correct;
+      const text = correct
+        ? 'Tacno. Mozes oznaciti da znas ili preci na sledece pitanje.'
+        : 'Nije tacno. Pogledaj oznacen tacan odgovor i puno resenje ispod.';
+      return `<div class="feedback ${correct ? 'correct' : 'wrong'}">${text}</div>`;
+    }
+
+    function filteredIndexes() {
+      const query = state.query.trim().toLowerCase();
+      if (!query) return QUESTIONS.map((_, index) => index);
+      return QUESTIONS
+        .map((item, index) => ({ item, index }))
+        .filter((entry) => {
+          const haystack = `${entry.item.number} ${entry.item.question} ${entry.item.answer}`.toLowerCase();
+          return haystack.includes(query);
+        })
+        .map((entry) => entry.index);
+    }
+
+    function setMode(mode) {
+      state.mode = mode;
+      resetInteraction();
+      document.querySelectorAll('.tab').forEach((tab) => {
+        tab.classList.toggle('active', tab.dataset.mode === mode);
+      });
+      render();
+    }
+
+    function setStatus(number, status) {
+      const key = String(number);
+      if (state.progress[key] === status) {
+        delete state.progress[key];
+      } else {
+        state.progress[key] = status;
+      }
+      saveProgress();
+      render();
+    }
+
+    function autoGradeCurrentQuestion() {
+      if (state.mode !== 'test' || !state.checked || state.selectedChoice === null) return;
+      const item = currentQuestion();
+      const selected = item.choices[state.selectedChoice];
+      state.progress[String(item.number)] = selected && selected.correct ? 'known' : 'review';
+      saveProgress();
+    }
+
+    function go(delta) {
+      const total = state.order.length;
+      if (delta > 0) autoGradeCurrentQuestion();
+      state.currentPosition = (state.currentPosition + delta + total) % total;
+      resetInteraction();
+      render();
+    }
+
+    function jumpToIndex(index) {
+      const position = state.order.indexOf(index);
+      state.currentPosition = position >= 0 ? position : 0;
+      resetInteraction();
+      setMode('study');
+    }
+
+    function shuffle() {
+      for (let i = state.order.length - 1; i > 0; i -= 1) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [state.order[i], state.order[j]] = [state.order[j], state.order[i]];
+      }
+      state.currentPosition = 0;
+      resetInteraction();
+      render();
+    }
+
+    function resetProgress() {
+      state.progress = {};
+      saveProgress();
+      render();
+    }
+
+    function renderStats() {
+      const values = Object.values(state.progress);
+      const known = values.filter((value) => value === 'known').length;
+      const review = values.filter((value) => value === 'review').length;
+      totalStat.textContent = String(QUESTIONS.length);
+      knownStat.textContent = String(known);
+      reviewStat.textContent = String(review);
+      leftStat.textContent = String(Math.max(QUESTIONS.length - known, 0));
+    }
+
+    function renderNumberGrid() {
+      numberGrid.innerHTML = QUESTIONS.map((item, index) => {
+        const status = state.progress[String(item.number)] || '';
+        const active = index === currentIndex() && state.mode !== 'browse' ? ' active' : '';
+        return `<button class="num ${status}${active}" type="button" data-index="${index}" title="Question ${item.number}">${item.number}</button>`;
+      }).join('');
+    }
+
+    function renderCard(testMode = false) {
+      const item = currentQuestion();
+      const progress = Math.round(((state.currentPosition + 1) / state.order.length) * 100);
+      const status = state.progress[String(item.number)];
+      const answerClass = state.revealed ? 'answer' : 'answer hidden';
+      const choices = testMode
+        ? renderChoices(item)
+        : '';
+      const feedback = testMode ? renderFeedback(item) : '';
+      const checkButton = testMode && !state.checked
+        ? `<button class="button primary" id="checkBtn" type="button" ${state.selectedChoice === null ? 'disabled' : ''}>Proveri</button>`
+        : '';
+      const gradeButtons = state.revealed || state.checked
+        ? `<div class="grade-actions">
+            <button class="button ok" type="button" data-status="known">Znam</button>
+            <button class="button danger" type="button" data-status="review">Ponovi</button>
+          </div>`
+        : '';
+
+      panel.innerHTML = `
+        <div class="progress"><span style="width: ${progress}%"></span></div>
+        <div class="meta">
+          <span>Pitanje ${item.number}</span>
+          <span class="badge">${state.currentPosition + 1} / ${state.order.length}${status ? ' · ' + status : ''}</span>
+        </div>
+        <h2 class="question">${escapeText(item.question)}</h2>
+        ${choices}
+        ${feedback}
+        <div id="answer" class="${answerClass}">${escapeText(item.answer)}</div>
+        <div class="card-actions">
+          <div class="actions">
+            <button class="button" id="prevBtn" type="button">Nazad</button>
+            <button class="button" id="nextBtn" type="button">Sledece</button>
+          </div>
+          <div class="actions">
+            ${checkButton}
+            <button class="button primary" id="revealBtn" type="button">${state.revealed ? 'Sakrij resenje' : 'Prikazi resenje'}</button>
+            ${gradeButtons}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderBrowse() {
+      const matches = filteredIndexes();
+      if (matches.length === 0) {
+        panel.innerHTML = '<div class="empty">No matches.</div>';
+        return;
+      }
+      panel.innerHTML = `<div class="browse">${matches.map((index) => {
+        const item = QUESTIONS[index];
+        return `<details>
+          <summary>${item.number}. ${escapeText(item.question)}</summary>
+          <div>${escapeText(item.answer)}</div>
+        </details>`;
+      }).join('')}</div>`;
+    }
+
+    function render() {
+      renderStats();
+      renderNumberGrid();
+      if (state.mode === 'browse') {
+        renderBrowse();
+      } else {
+        renderCard(state.mode === 'test');
+      }
+    }
+
+    document.querySelectorAll('.tab').forEach((tab) => {
+      tab.addEventListener('click', () => setMode(tab.dataset.mode));
+    });
+
+    document.getElementById('shuffleBtn').addEventListener('click', shuffle);
+    document.getElementById('resetBtn').addEventListener('click', resetProgress);
+
+    numberGrid.addEventListener('click', (event) => {
+      const button = event.target.closest('button[data-index]');
+      if (!button) return;
+      jumpToIndex(Number(button.dataset.index));
+    });
+
+    panel.addEventListener('click', (event) => {
+      const target = event.target.closest('button');
+      if (!target) return;
+      if (target.dataset.choice !== undefined) {
+        state.selectedChoice = Number(target.dataset.choice);
+        render();
+        return;
+      }
+      if (target.id === 'prevBtn') go(-1);
+      if (target.id === 'nextBtn') go(1);
+      if (target.id === 'checkBtn' && state.selectedChoice !== null) {
+        state.checked = true;
+        state.revealed = true;
+        render();
+      }
+      if (target.id === 'revealBtn') {
+        state.revealed = !state.revealed;
+        render();
+      }
+      if (target.dataset.status) {
+        setStatus(currentQuestion().number, target.dataset.status);
+      }
+    });
+
+    search.addEventListener('input', () => {
+      state.query = search.value;
+      const numeric = Number(state.query.trim());
+      const exact = QUESTIONS.findIndex((item) => item.number === numeric);
+      if (exact >= 0 && state.mode !== 'browse') {
+        jumpToIndex(exact);
+        return;
+      }
+      render();
+    });
+
+    document.addEventListener('keydown', (event) => {
+      if (event.target.matches('input, textarea')) return;
+      if (event.key === 'ArrowLeft') go(-1);
+      if (event.key === 'ArrowRight') go(1);
+      if (event.key === ' ') {
+        event.preventDefault();
+        state.revealed = !state.revealed;
+        render();
+      }
+    });
+
+    render();
+  </script>
+</body>
+</html>
