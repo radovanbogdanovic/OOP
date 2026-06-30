@@ -1,0 +1,71 @@
+
+TOP 20 OOP pitanja (mapiranje)
+
+1 - Podrazumevano izvođenje klase (1)
+2 - Iteratori (8)
+3 - find + begin/end (11)
+4 - Specijalizacija šablona klase (3)
+5 - Specijalizacija šablona funkcije (54)
+6 - Prijateljstvo (24)
+7 - Redosled konstruktora (32/59)
+8 - Redosled destruktora (82)
+9 - Šta ne nasleđuje izvedena klasa (23)
+10 - Postdekrement operator (21)
+11 - Prefiks vs postfiks ++ (6)
+12 - noexcept operator (20)
+13 - noexcept funkcija (47)
+14 - throw (5)
+15 - Operatori za pristup članovima (9)
+16 - Parametri šablona (22)
+17 - Konstruktor kopije (74/75)
+18 - Ograničenja operatora (37)
+19 - Virtualni mehanizam (88/89)
+20 - Izuzeci gde se bacaju (85)
+
+
+2️⃣ Podrazumevano definisani operatori
+
+➡ pitanje 37
+
+3️⃣ find(++(nums.begin()), (nums.end())--, 2026)
+
+➡ pitanje 11
+(+ napomena: kod je neispravan zbog iteratora)
+
+4️⃣ Specijalizacija generičkih funkcija
+
+➡ pitanje 54
+
+samo potpuna (NE delimična)
+
+5️⃣ Relacija prijateljstva
+
+➡ pitanje 24
+
+6️⃣ Redosled konstruktora izvedene klase
+
+➡ pitanje 32 (ili 59)
+
+7️⃣ Asocijativnost operatora >>
+
+➡ pitanje 2
+
+leva (left-to-right)
+
+8️⃣ Dejstvo noexcept operatora
+
+➡ pitanje 20
+
+9️⃣ Povratna vrednost postdekrementa
+
+➡ pitanje 21
+
+🔟 Move konstruktor
+
+➡ pitanje 16
+
+
+
+Konstruktor kopije se poziva pri inicijalizaciji objekta drugim objektom iste klase, pri prosleđivanju objekta funkciji po vrednosti i pri vraćanju objekta iz funkcije po vrednosti.
+
+Ne mogu se preklapati operatori: ., .*, ::, ?: i sizeof. Takodje ne moze se menjati prioritet, asocijativnost i parnost, niti se mogu definisati novi simboli operatora koji ne postoje u jeziku
